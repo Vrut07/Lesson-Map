@@ -44,3 +44,89 @@ export const courseOutline = {
     },
   ],
 };
+
+export const exampleCourses = [
+  {
+    id: 1,
+    title: "Fullstack Developer Bootcamp",
+    description:
+      "A complete roadmap to becoming a fullstack engineer — from HTML to advanced backend APIs with Node.js and MongoDB.",
+    outline: [
+      "HTML, CSS & JavaScript Fundamentals",
+      "Version Control with Git & GitHub",
+      "Frontend Development with React",
+      "Server-side Programming with Node.js & Express",
+      "Authentication & Authorization",
+      "Database Management with MongoDB",
+      "Deploying to Cloud Platforms",
+    ],
+  },
+  {
+    id: 2,
+    title: "Product Design Masterclass",
+    description:
+      "Learn how to craft intuitive user experiences and stunning interfaces using Figma, design systems, and real-world UX principles.",
+    outline: [
+      "Understanding UX Research",
+      "Wireframes & User Flows",
+      "High-Fidelity UI Design in Figma",
+      "Design Systems & Components",
+      "Interactive Prototyping",
+      "User Testing & Feedback",
+    ],
+  },
+  {
+    id: 3,
+    title: "Data Science with Python",
+    description:
+      "Master data analysis, visualization, and predictive modeling using Python and key data science libraries.",
+    outline: [
+      "Python Essentials for Data Science",
+      "Data Cleaning & Manipulation with Pandas",
+      "Data Visualization with Matplotlib & Seaborn",
+      "Statistics for Machine Learning",
+      "Intro to Machine Learning Models",
+      "Capstone Project: Predictive Analytics",
+    ],
+  },
+  {
+    id: 4,
+    title: "No-Code App Development",
+    description:
+      "Build functional web apps and automations using tools like Webflow, Airtable, and Zapier — no coding required.",
+    outline: [
+      "Understanding No-Code Ecosystem",
+      "Designing Web Interfaces in Webflow",
+      "Creating Workflows in Zapier",
+      "Connecting Databases with Airtable",
+      "Publishing & Scaling Apps",
+    ],
+  },
+  {
+    id: 5,
+    title: "Creative Writing for Beginners",
+    description:
+      "Learn storytelling, character development, and editing techniques to bring your writing to life.",
+    outline: [
+      "Finding Your Writing Voice",
+      "Character Creation & World-Building",
+      "Crafting Engaging Plotlines",
+      "Editing & Rewriting Techniques",
+      "Publishing & Sharing Your Work",
+    ],
+  },
+  {
+    id: 6,
+    title: "Entrepreneurship & Startup Strategy",
+    description:
+      "Turn your ideas into a successful startup — from validation and product building to funding and growth.",
+    outline: [
+      "Idea Validation & Market Research",
+      "Building an MVP",
+      "Startup Legal & Financial Basics",
+      "Go-to-Market Strategy",
+      "Pitching to Investors",
+      "Scaling Your Business",
+    ],
+  },
+];

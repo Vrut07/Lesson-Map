@@ -204,6 +204,7 @@ export default function Navbar({ className }: { className?: string }) {
 
   const authenticatedNavItems = [
     { item: "Home", href: "/" },
+    { item: "Examples", href: "/examples" },
     { item: "Dashboard", href: "/dashboard" },
     { item: "Pricing", href: "/pricing" },
   ];
@@ -213,7 +214,7 @@ export default function Navbar({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "fixed top-0 inset-x-0 z-50 border-b border-border/40 bg-transparent backdrop-blur",
+        "fixed top-0 inset-x-0 z-50 px-5 border-b border-border/40 bg-transparent backdrop-blur",
         className
       )}
     >
@@ -222,15 +223,15 @@ export default function Navbar({ className }: { className?: string }) {
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <span className="font-bold text-xl">LessonMap</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-6 text-sm">
+        </div>
+
+        <div className="flex flex-1 items-center justify-end">
+          <nav className="hidden mr-3 md:flex items-center gap-6 text-sm">
             {navItems.map((nav, index) => (
               <NavbarItem key={index} item={nav.item} href={nav.href} />
             ))}
           </nav>
-        </div>
-
-        <div className="flex flex-1 items-center justify-end">
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className="hidden px-4 md:flex items-center gap-2">
             <ThemeToggle />
             {!isPending && (
               <>
