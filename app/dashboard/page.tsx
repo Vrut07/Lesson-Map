@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { TbDotsVertical } from "react-icons/tb";
+import Navbar from "@/components/Nav/Navbar"
 
 
 
@@ -72,10 +73,13 @@ const DashboardPage = () => {
   ]
 
   return (
-    <section className="container mx-auto pb-20">
+
+    <>
+    <Navbar/>
+    <section className="container mx-auto py-20">
       <div className=" flex my-10 flex-col md:flex-row justify-between md:px-10 px-4">
         <div className="flex items-start flex-col">
-          <h1 className="text-4xl font-bold mb-3 text-primary">Dashboard</h1>
+          <h1 className="text-4xl font-bold mb-3">Dashboard</h1>
           <p className="text-muted-foreground text-lg mb-6">
             Manage and explore your created course outlines.
           </p>
@@ -118,6 +122,7 @@ const DashboardPage = () => {
         ))}
       </div>
     </section >
+    </>
   )
 }
 
