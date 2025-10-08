@@ -17,7 +17,7 @@ const Hero = () => {
     if (session?.user) {
       redirect("/dashboard");
     } else {
-      redirect("/signin");
+      redirect("/sign-in");
     }
   };
 
