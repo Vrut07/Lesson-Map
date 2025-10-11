@@ -13,7 +13,8 @@ const SingleOutlinePage = async ({
 ) => {
 	const { id } = await params;
 	return (
-		<section><SingleOutline id={id} />
+		<section>
+			<SingleOutline id={id} />
 		</section>
 	)
 }
