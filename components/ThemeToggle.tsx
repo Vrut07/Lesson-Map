@@ -8,7 +8,7 @@ const ThemeToggle = () => {
     <Button
       variant={"ghost"}
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="inline-flex items-center justify-center rounded-md h-9 w-9 hover:bg-accent hover:text-accent-foreground transition-colors"
+      className="inline-flex items-center justify-center h-9 w-9 hover:bg-accent hover:text-accent-foreground transition-colors rounded-full"
     >
       {theme === "light" ? (
         <Moon className="h-4 w-4" />
