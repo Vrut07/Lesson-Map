@@ -17,9 +17,37 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
+  Course        Course[]
 
   @@unique([email])
   @@map("user")
+}
+
+model Course {
+  id          String   @id
+  courseName  String
+  description String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  Module      Module[]
+}
+
+model Module {
+  id          String   @id
+  description String
+  moduleName  String
+  order       Int
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id])
+  Lesson      Lesson[]
+}
+
+model Lesson {
+  id         String @id
+  lessonName String
+  order      Int
+  moduleId   String
+  module     Module @relation(fields: [moduleId], references: [id])
 }
 
 model Session {
