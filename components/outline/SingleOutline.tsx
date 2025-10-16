@@ -89,8 +89,8 @@ const SingleOutline = ({ id }: { id: string }) => {
   }, [])
 
   return (
-    <section className="container relative mx-auto px-6 space-y-8 pb-10">
-      <div className="absolute top-10 right-6 border rounded-full flex gap-2 py-0.5 px-2 items-center bg-popover">
+    <section className="container relative mx-auto px-6 space-y-8 py-10">
+      <div className="absolute top-18 right-6 border rounded-full flex gap-2 py-0.5 px-2 items-center bg-popover">
         <ThemeToggle />
         <div
           className="h-5 w-5 cursor-pointer"

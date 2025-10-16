@@ -21,6 +21,7 @@ export default function RootLayout({
           defaultTheme="dark"
           enableSystem
         >
+          <Navbar/>
           <main className="">{children}</main>
         </NextThemesProvider>
       </body>

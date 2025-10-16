@@ -1,4 +1,4 @@
-import React from "react"
+import React from "react";
 import {
   Card,
   CardAction,
@@ -7,9 +7,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Edit, Eye, Menu, PlusIcon, Trash2 } from "lucide-react"
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Edit, Eye, Menu, PlusIcon, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,12 +17,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { TbDotsVertical } from "react-icons/tb";
-import Navbar from "@/components/Nav/Navbar"
-
-
-
+import Link from "next/link";
 
 const DashboardPage = () => {
   const courses = [
@@ -68,62 +65,63 @@ const DashboardPage = () => {
     {
       id: 4,
       title: "Digital Marketing 101",
-      description: "An introductory course on SEO, SEM, content marketing, and social media strategies.",
-    }
-  ]
+      description:
+        "An introductory course on SEO, SEM, content marketing, and social media strategies.",
+    },
+  ];
 
   return (
-
     <>
-    <Navbar/>
-    <section className="container mx-auto py-20">
-      <div className=" flex my-10 flex-col md:flex-row justify-between md:px-10 px-4">
-        <div className="flex items-start flex-col">
-          <h1 className="text-4xl font-bold mb-3">Dashboard</h1>
-          <p className="text-muted-foreground text-lg mb-6">
-            Manage and explore your created course outlines.
-          </p>
+      <section className="container mx-auto py-20">
+        <div className=" flex my-10 flex-col md:flex-row justify-between md:px-10 px-4">
+          <div className="flex items-start flex-col">
+            <h1 className="text-4xl font-bold mb-3">Dashboard</h1>
+            <p className="text-muted-foreground text-lg mb-6">
+              Manage and explore your created course outlines.
+            </p>
+          </div>
+          <Button className="text-base" asChild>
+            <Link href={"/dashboard/create/new/course"}>
+              <PlusIcon /> Create New Outline
+            </Link>
+          </Button>
         </div>
-        <Button className="text-base">
-          <PlusIcon /> Create New Outline
-        </Button>
-      </div>
-      <div className="container grid grid-cols-1 md:grid-cols-2 mx-auto gap-5 md:px-10 px-4">
-        {courses.map((course) => (
-          <Card key={course.id} className="w-full">
-            <CardHeader>
-              <CardTitle className="text-2xl ">{course.title}</CardTitle>
-              <CardDescription className="text-base text-muted-foreground">
-                {course.description}
-              </CardDescription>
-              <CardAction>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant={"ghost"}>
-                      <TbDotsVertical />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Eye /> View
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Edit /> Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive">
-                      <Trash2 /> View
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardAction>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
-    </section >
+        <div className="container grid grid-cols-1 md:grid-cols-2 mx-auto gap-5 md:px-10 px-4">
+          {courses.map((course) => (
+            <Card key={course.id} className="w-full">
+              <CardHeader>
+                <CardTitle className="text-2xl ">{course.title}</CardTitle>
+                <CardDescription className="text-base text-muted-foreground">
+                  {course.description}
+                </CardDescription>
+                <CardAction>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant={"ghost"}>
+                        <TbDotsVertical />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem>
+                        <Eye /> View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Edit /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="destructive">
+                        <Trash2 /> View
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardAction>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </section>
     </>
-  )
-}
+  );
+};
 
-export default DashboardPage
+export default DashboardPage;
