@@ -35,13 +35,12 @@ const Hero = () => {
         <div className="my-4 flex md:flex-row flex-col w-full px-5 justify-center items-center gap-3">
           <Button onClick={handleRedirect}>
             <>
-            Get Started
-            <LiaAngleRightSolid/>
+              Get Started
+              <LiaAngleRightSolid />
             </>
 
           </Button>
         </div>
-
         <LightRays />
       </section>
 

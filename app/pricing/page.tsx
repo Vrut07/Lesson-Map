@@ -39,7 +39,6 @@ const plans = [
 const PricingPage = () => {
   return (
     <>
-      <Navbar />
       <section className="mt-36 pb-20 flex flex-col justify-center items-center relative overflow-hidden">
         <div className="text-center space-y-4 px-5">
           <h1 className="text-4xl font-bold">
