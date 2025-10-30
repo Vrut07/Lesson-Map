@@ -1,39 +1,32 @@
-import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSeparator,
-  FieldSet,
-  FieldTitle,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import CreateCourseForm from "@/components/forms/CreateCourseForm";
+import FullCourseOutline from "@/components/FullCourseOutline";
+import { db } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
-const CoursePage = () => {
+const CoursePage = async () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const courses = await db.course.findMany({
+    where: { userId: session?.session.userId },
+    include: {
+      Module: {
+        include: {
+          Lesson: true,
+        },
+      },
+    },
+  });
   return (
-    <section className="max-w-4xl md:px-10 px-5 py-20">
-        <h1 className="text-2xl font-bold my-5 ">Create Your Course</h1>
-      <FieldSet>
-        
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="title">Title</FieldLabel>
-            <Input id="name" autoComplete="off" placeholder="Enter Your Course Title" />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="desc">Description</FieldLabel>  
-            <Textarea autoComplete="off" placeholder="Enter Your Course Description" />
-          </Field>
-          <Button>
-            Create Course
-          </Button>
-        </FieldGroup>
-      </FieldSet>
+    <section className="container px-5 py-20 grid md:grid-cols-3 grid-cols-1 gap-10 mx-auto">
+      <div className="c">
+        <CreateCourseForm />
+      </div>
+      <div className="col-span-2">
+        <FullCourseOutline initialCourses={courses} />
+      </div>
     </section>
   );
 };

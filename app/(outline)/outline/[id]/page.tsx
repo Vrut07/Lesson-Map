@@ -1,6 +1,6 @@
 import SingleOutline from "@/components/outline/SingleOutline";
 
-
+ 
 interface PageProps {
 	params: Promise<{
 		id: string

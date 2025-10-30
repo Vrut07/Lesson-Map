@@ -1,34 +1,36 @@
-import ModuleList from "@/components/outline/ModuleList";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import CreateModuleForm from '@/components/forms/CreateModuleForm';
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/prisma';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import FullCourseOutline from "@/components/FullCourseOutline";
 
-const CreateModulePage = () => {
+export default async function CreateModulePage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session?.session?.userId) {
+    redirect('/sign-in');
+  }
+
+  const courses = await db.course.findMany({
+    where: { userId: session?.session.userId },
+    include: {
+      Module: {
+        include: {
+          Lesson: true,
+        },
+      },
+    },
+  });
+
   return (
-    <section className="max-w-4xl md:px-10 px-5 py-20">
-      <div className="flex flex-col md:flex-row justify-left items-center  gap-3">
-        <h1 className="md:text-2xl text-lg font-bold ">Create Your Module For :</h1>    
-        <Select>
-          <SelectTrigger >
-            <SelectValue placeholder="Select Course For This Module" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="devops">Devops</SelectItem>
-          </SelectContent>
-        </Select>
+    <section className="container px-5 py-20 grid md:grid-cols-2 grid-cols-1 gap-10 mx-auto">
+      <div>
+        <CreateModuleForm courses={courses} />
       </div>
-      <div className="my-9">
-
-        <ModuleList/>
-
+      <div className="">
+        <FullCourseOutline initialCourses={courses} />
       </div>
     </section>
   );
-};
-
-export default CreateModulePage;
+}
