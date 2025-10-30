@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { createCourseSchema } from "@/lib/validation";
+import { revalidatePath } from "next/cache";
 
 // Get all courses with their modules
 export async function GET() {
@@ -12,7 +13,6 @@ export async function GET() {
   });
 
   const userID = session?.session.userId;
-  console.log(userID);
   if (!userID) {
     return NextResponse.json(
       { error: "Unauthorized! Please login to continue" },
@@ -22,7 +22,13 @@ export async function GET() {
   try {
     const courses = await db.course.findMany({
       where: { userId: userID },
-      include: { Module: true },
+      include: {
+        Module: {
+          include: {
+            Lesson: true,
+          },
+        },
+      },
     });
     if (!courses || courses.length === 0) {
       return NextResponse.json({ error: "No courses found" }, { status: 404 });
