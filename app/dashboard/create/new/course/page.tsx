@@ -21,7 +21,7 @@ const CoursePage = async () => {
   });
   return (
     <section className="container px-5 py-20 grid md:grid-cols-3 grid-cols-1 gap-10 mx-auto">
-      <div className="c">
+      <div>
         <CreateCourseForm />
       </div>
       <div className="col-span-2">

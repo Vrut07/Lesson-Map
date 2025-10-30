@@ -40,7 +40,7 @@ interface CourseOutlineViewerProps {
   initialCourses?: Course[];
 }
 
-export default function CourseOutlineViewer({
+export default function FullCourseOutline({
   initialCourses = [],
   className = ''
 }: CourseOutlineViewerProps) {
