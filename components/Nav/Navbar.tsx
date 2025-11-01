@@ -214,7 +214,7 @@ export default function Navbar({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "fixed top-0 inset-x-0 z-50 px-5 bg-transparent backdrop-blur",
+        "fixed top-0 inset-x-0 z-50 px-5 shadow bg-transparent backdrop-blur",
         className
       )}
     >

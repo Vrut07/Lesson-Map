@@ -21,30 +21,32 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Loader2, Sparkles, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { Module } from "@prisma/client";
+import { Course } from "@prisma/client";
 
 type LessonItem = {
   id: string;
   name: string;
   description?: string;
+  duration?: string;
   order: number;
 };
 
-type Course = {
+type Module = {
   id: string;
-  courseName: string;
+  moduleName: string;
 };
 
-function SortableItem({
+
+function SortableLessonItem({
   id,
   name,
   order,
-  description,
   onDelete,
 }: {
   id: string;
   name: string;
   description?: string;
+  duration?: string;
   order: number;
   onDelete: (id: string) => void;
 }) {
@@ -70,11 +72,6 @@ function SortableItem({
         </span>
         <div className="flex flex-col items-start w-full">
           <span className="font-medium text-base">{name}</span>
-          {description && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {description}
-            </p>
-          )}
         </div>
       </div>
       <Button
@@ -83,25 +80,20 @@ function SortableItem({
         onClick={() => onDelete(id)}
         className="text-destructive hover:text-destructive"
       >
-        <Trash className="h-4 w-4" />
+        <Trash className="h-4 w-4" /> Delete
       </Button>
     </div>
   );
 }
 
-export default function CreateLessonForm({
-  modules,
-}: {
-  modules: Module[];
-}) {
+export default function CreateLessonForm({ module }: { module: Module[] }) {
   const [selectedModule, setSelectedModule] = useState("");
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [newLesson, setNewLesson] = useState("");
-  const [newLessonDescription, setNewLessonDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
 
-  function handleAddModule() {
+  function handleAddLesson() {
     if (!newLesson.trim()) {
       toast.error("Lesson name cannot be empty");
       return;
@@ -113,17 +105,15 @@ export default function CreateLessonForm({
       {
         id: Date.now().toString(),
         name: newLesson.trim(),
-        description: newLessonDescription.trim(),
         order: nextOrder,
       },
     ]);
 
     setNewLesson("");
-    setNewLessonDescription("");
   }
 
-  function handleDeleteModule(id: string) {
-    setLessons((prev) => prev.filter((m) => m.id !== id));
+  function handleDeleteLesson(id: string) {
+    setLessons((prev) => prev.filter((l) => l.id !== id));
   }
 
   function handleDragEnd(event: any) {
@@ -133,8 +123,8 @@ export default function CreateLessonForm({
     setLessons((items) => {
       const oldIndex = items.findIndex((i) => i.id === active.id);
       const newIndex = items.findIndex((i) => i.id === over.id);
-      const reordered = arrayMove(items, oldIndex, newIndex).map((m, i) => ({
-        ...m,
+      const reordered = arrayMove(items, oldIndex, newIndex).map((l, i) => ({
+        ...l,
         order: i + 1,
       }));
       return reordered;
@@ -143,12 +133,12 @@ export default function CreateLessonForm({
 
   async function handleSubmit() {
     if (!selectedModule) {
-      toast.error("Please select a course first");
+      toast.error("Please select a module first");
       return;
     }
 
     if (lessons.length === 0) {
-      toast.error("Add at least one module before saving");
+      toast.error("Add at least one lesson before saving");
       return;
     }
 
@@ -156,19 +146,18 @@ export default function CreateLessonForm({
 
     const payload = {
       moduleId: selectedModule,
-      lessons: lessons.map((m) => ({
-        lessonName: m.name,
-        description: m.description,
-        order: m.order,
+      lessons: lessons.map((l) => ({
+        lessonName: l.name,
+        description: l.description,
+        duration: l.duration,
+        order: l.order,
       })),
     };
 
     try {
       const res = await fetch("/api/lesson", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -176,15 +165,15 @@ export default function CreateLessonForm({
 
       if (!res.ok) {
         console.error("Server error:", responseData);
-        toast.error(responseData?.error?.message || "Failed to create modules");
+        toast.error(responseData?.error?.message || "Failed to create lessons");
       } else {
-        toast.success("Modules created successfully!");
+        toast.success("Lessons created successfully!");
         setLessons([]);
         setSelectedModule("");
       }
     } catch (error) {
-      console.error("Module creation failed:", error);
-      toast.error("Error saving modules");
+      console.error("Lesson creation failed:", error);
+      toast.error("Error saving lessons");
     } finally {
       setLoading(false);
     }
@@ -196,34 +185,36 @@ export default function CreateLessonForm({
       setLessons([
         {
           id: "1",
-          name: "Introduction to Next.js 15",
-          description: "Overview of new features, server actions, and routing.",
+          name: "What is Next.js?",
+          description: "Introduction to Next.js fundamentals and project setup.",
+          duration: "10 mins",
           order: 1,
         },
         {
           id: "2",
-          name: "Server Components Deep Dive",
-          description: "Understanding how server and client components work together.",
+          name: "Server Components Explained",
+          description: "Learn how server components simplify data fetching.",
+          duration: "15 mins",
           order: 2,
         },
         {
           id: "3",
-          name: "Building a Fullstack App with Prisma",
-          description: "Integrating Prisma with Next.js for robust backend handling.",
+          name: "Deploying Your Next.js App",
+          description: "Walkthrough of Vercel deployment and optimization.",
+          duration: "8 mins",
           order: 3,
         },
       ]);
       setAiLoading(false);
-      toast.success("AI generated module outline ✨");
+      toast.success("AI generated lesson outline ✨");
     }, 1500);
   }
 
   return (
     <div className="w-full mx-auto mt-10">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Create Lesson
+          Create Lessons
         </h1>
         <Button
           type="button"
@@ -244,14 +235,13 @@ export default function CreateLessonForm({
         </Button>
       </div>
 
-      {/* Select module */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <Select value={selectedModule} onValueChange={setSelectedModule}>
           <SelectTrigger>
-            <SelectValue placeholder="Select Module for this course lessons" />
+            <SelectValue placeholder="Select module for lessons" />
           </SelectTrigger>
           <SelectContent>
-            {modules.map((m) => (
+            {module.map((m) => (
               <SelectItem key={m.id} value={m.id}>
                 {m.moduleName}
               </SelectItem>
@@ -260,38 +250,33 @@ export default function CreateLessonForm({
         </Select>
       </div>
 
-      {/* Add new module */}
       <div className="flex flex-col gap-3 mb-6">
         <Input
           value={newLesson}
           onChange={(e) => setNewLesson(e.target.value)}
-          placeholder="Enter module name"
+          placeholder="Enter lesson name"
         />
-        <Textarea
-          value={newLessonDescription}
-          onChange={(e) => setNewLessonDescription(e.target.value)}
-          placeholder="Enter module description"
-        />
+
         <Button
           variant="secondary"
-          onClick={handleAddModule}
+          onClick={handleAddLesson}
           className="gap-2 w-fit"
         >
-          <Plus className="h-4 w-4" /> Add Module
+          <Plus className="h-4 w-4" /> Add Lesson
         </Button>
       </div>
 
-      {/* Draggable list */}
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={lessons} strategy={verticalListSortingStrategy}>
           {lessons.map((l) => (
-            <SortableItem
+            <SortableLessonItem
               key={l.id}
               id={l.id}
               name={l.name}
               description={l.description}
+              duration={l.duration}
               order={l.order}
-              onDelete={handleDeleteModule}
+              onDelete={handleDeleteLesson}
             />
           ))}
         </SortableContext>
