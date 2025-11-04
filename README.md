@@ -94,12 +94,12 @@ Structured. Logical. Editable. In minutes.
 
 ## 🧭 Product Overview
 
-| Area | Description |
-|-------|-------------|
-| 🏠 **Dashboard** | Manage all your courses in one place |
-| 🧩 **Module Builder** | Add and organize learning modules |
-| 🤖 **AI Assist** | Generate complete outlines instantly |
-| 📋 **Course Overview** | Review and refine your course flow |
+| Area                  | Description                          |
+| --------------------- | ------------------------------------ |
+| 🏠 **Dashboard**       | Manage all your courses in one place |
+| 🧩 **Module Builder**  | Add and organize learning modules    |
+| 🤖 **AI Assist**       | Generate complete outlines instantly |
+| 📋 **Course Overview** | Review and refine your course flow   |
 
 ---
 
@@ -110,29 +110,20 @@ Empower every educator, trainer, and creator to **share knowledge beautifully** 
 LessonMap isn’t just another course builder —  
 it’s a **thinking tool for learning design.**
 
----
-
-## 📬 Connect with Us
-
-🌐 **Website:** [lessonmap.io](https://lessonmap.io)  
-🐦 **Twitter/X:** [@lessonmaphq](https://twitter.com/lessonmaphq)  
-📧 **Email:** hello@lessonmap.io  
-
----
 
 ## ⚙️ Technology Stack (for Developers)
 
 While LessonMap focuses on simplicity for educators, it’s built with modern, scalable technologies to ensure a seamless experience:
 
-| Category | Tech |
-|-----------|------|
-| **Frontend Framework** | Next.js 15 |
-| **UI Framework** | Tailwind CSS + shadcn/ui |
-| **Database & ORM** | PostgreSQL + Prisma |
-| **Auth** | BetterAuth |
-| **Validation** | Zod |
-| **Notifications** | Sonner |
-| **State & Logic** | React Hooks + Server Actions |
+| Category               | Tech                         |
+| ---------------------- | ---------------------------- |
+| **Frontend Framework** | Next.js 15                   |
+| **UI Framework**       | Tailwind CSS + shadcn/ui     |
+| **Database & ORM**     | PostgreSQL + Prisma          |
+| **Auth**               | BetterAuth                   |
+| **Validation**         | Zod                          |
+| **Notifications**      | Sonner                       |
+| **State & Logic**      | React Hooks + Server Actions |
 
 ---
 
@@ -140,10 +131,10 @@ While LessonMap focuses on simplicity for educators, it’s built with modern, s
 
 Thanks to all the amazing people who contributed to **LessonMap** 💡
 
-| Name | Role | GitHub |
-|------|------|--------|
-| Ayush | Developer | [@ayush-khatrii](https://github.com/ayush-khatrii) |
-| Vrut07 | Developer  | [@vrut07](http://github.com/vrut07/) |
+| Name   | Role      | GitHub                                             |
+| ------ | --------- | -------------------------------------------------- |
+| Ayush  | Developer | [@ayush-khatrii](https://github.com/ayush-khatrii) |
+| Vrut07 | Developer | [@vrut07](http://github.com/vrut07/)               |
 
 ## 📜 License
 
