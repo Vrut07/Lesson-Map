@@ -80,7 +80,7 @@ const Dashboard = async () => {
               </div>
             </div>
             <Button className="gap-2" size="sm" asChild>
-              <Link href="/dashboard/create/new/course">
+              <Link href="/dashboard/create/new">
                 <PlusIcon className="mr-2 h-4 w-4" /> Create Course
               </Link>
             </Button>
