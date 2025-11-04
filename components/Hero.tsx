@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import React from "react";
 import { AuroraText } from "@/components/ui/aurora-text";
-import { LightRays } from "@/components/ui/light-rays";
 import { redirect } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { LiaAngleRightSolid } from "react-icons/lia";
