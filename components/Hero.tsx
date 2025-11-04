@@ -33,7 +33,7 @@ const Hero = () => {
           </p>
         </div>
         <div className="my-4 flex md:flex-row flex-col w-full px-5 justify-center items-center gap-3">
-          <Button onClick={handleRedirect}>
+          <Button variant={"default"} onClick={handleRedirect}>
             <>
               Get Started
               <LiaAngleRightSolid />
@@ -41,7 +41,7 @@ const Hero = () => {
 
           </Button>
         </div>
-        <LightRays />
+        {/* <LightRays /> */}
       </section>
 
       <div className="absolute top-0 left-0 w-full h-full -z-10">

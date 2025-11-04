@@ -12,10 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createCourseAction } from "@/lib/actions";
 import { createCourseSchema } from "@/lib/validation";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-
+import { IoSparklesSharp } from "react-icons/io5";
 
 interface CourseFormProps {
   errors?: Record<string, string>;
@@ -26,16 +26,11 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
 
-  const router = useRouter();
-
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setFormErrors({});
-
-    const form = event.currentTarget;
-
 
     const formData = new FormData(event.currentTarget);
     const data = {
@@ -58,8 +53,6 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
     try {
       const res = await createCourseAction(result.data);
       if (res.success) toast.success("Course created successfully!");
-      form.reset();
-      router.refresh();
     } catch (err) {
       setFormErrors({ global: (err as Error).message });
       toast.error((err as Error).message);
@@ -69,7 +62,6 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
   };
 
   const handleAIAssist = async () => {
-    // mock AI assist functionality
     setAiLoading(true);
     setTimeout(() => {
       const titleInput = document.getElementById("courseName") as HTMLInputElement;
@@ -77,7 +69,7 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
       if (titleInput && descInput) {
         titleInput.value = "Next.js 15 Masterclass: From Zero to Production";
         descInput.value =
-          "A comprehensive course covering Server Actions, Server Components, and scalable full-stack development using Next.js 15.";
+          "A complete course covering Server Actions, Server Components, and scalable full-stack development using Next.js 15.";
       }
       setAiLoading(false);
     }, 1500);
@@ -86,93 +78,105 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
   const mergedErrors = { ...errors, ...formErrors };
 
   return (
-    <div className=" text-card-foreground  rounded-2xl shadow-lg mt-10">
-      <div className="flex  gap-5 justify-end flex-col md:flex-row md:justify-between items-center mb-8">
-        <h1 className="text-xl md:text-3xl font-semibold tracking-tight">
-          Create Your Course
-        </h1>
+    <div className="w-full mt-8 space-y-6">
+      <div className="flex flex-col text-left sm:flex-row justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Create & Manage Courses</h2>
+          <p className="text-sm text-muted-foreground">
+            Create new courses outline and manage them.
+          </p>
+        </div>
         <Button
           type="button"
           variant="secondary"
           onClick={handleAIAssist}
           disabled={aiLoading}
-          className="gap-2"
+          className="gap-2 text-xs px-3 w-fit"
         >
           {aiLoading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Generating...
+              <Loader2 className="h-3 w-3 animate-spin" /> Generating...
             </>
           ) : (
             <>
-              <Sparkles className="h-4 w-4 text-primary" />
-              AI Assist
+              <IoSparklesSharp className="h-3 w-3 text-primary" /> AI Assist
             </>
           )}
         </Button>
       </div>
 
+
+      {/* Form */}
       <form onSubmit={handleSubmit} className="">
         <FieldSet>
-          <FieldGroup className="">
+          <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="courseName" className="text-lg font-medium">
-                Title
+              <FieldLabel
+                htmlFor="courseName"
+                className="text-sm font-medium"
+              >
+                Course Title
               </FieldLabel>
               <Input
                 id="courseName"
                 name="courseName"
                 autoComplete="off"
                 placeholder="e.g., Mastering TypeScript for React Developers"
+                className="text-sm"
               />
               {mergedErrors?.courseName && (
-                <p className="text-sm text-destructive mt-1">
+                <p className="text-xs text-destructive mt-1">
                   {mergedErrors.courseName}
                 </p>
               )}
             </Field>
 
+            {/* Description */}
             <Field>
-              <FieldLabel htmlFor="description" className="text-lg font-medium">
+              <FieldLabel
+                htmlFor="description"
+                className="text-sm font-medium mb-1"
+              >
                 Description
               </FieldLabel>
               <Textarea
                 id="description"
                 name="description"
                 autoComplete="off"
-                className="text-base min-h-[120px]"
+                className="text-sm min-h-[100px]"
                 placeholder="Briefly describe what this course is about..."
               />
               {mergedErrors?.description && (
-                <p className="text-sm text-destructive mt-1">
+                <p className="text-xs text-destructive mt-1">
                   {mergedErrors.description}
                 </p>
               )}
             </Field>
 
+            {/* Global Error */}
             {mergedErrors?.global && (
-              <p className="text-sm text-destructive mb-2">
-                {mergedErrors.global}
-              </p>
+              <p className="text-xs text-destructive">{mergedErrors.global}</p>
             )}
-
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full sm:w-auto px-6 text-base"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Course"
-                )}
-              </Button>
-            </div>
           </FieldGroup>
         </FieldSet>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full sm:w-auto px-5 text-sm"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Creating...
+              </>
+            ) : (
+              "Create Course"
+            )}
+          </Button>
+        </div>
       </form>
     </div>
   );

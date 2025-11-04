@@ -212,15 +212,15 @@ export default function Navbar({ className }: { className?: string }) {
   const navItems = session?.user ? authenticatedNavItems : publicNavItems;
 
   return (
-    <div
+    <nav
       className={cn(
-        "fixed top-0 inset-x-0 z-50 px-5 shadow bg-transparent backdrop-blur",
+        "fixed top-0  inset-x-0 z-50 md:px-5 shadow-sm bg-transparent backdrop-blur",
         className
       )}
     >
       <nav className="container mx-auto flex h-14 py-2 max-w-screen-2xl items-center px-4">
         <div className="mr-4 flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
+          <Link href="/" className="flex items-center">
             <span className="font-bold text-xl">LessonMap</span>
           </Link>
         </div>
@@ -249,7 +249,7 @@ export default function Navbar({ className }: { className?: string }) {
             )}
           </nav>
 
-          <div className="md:hidden flex items-center gap-2">
+          <div className="md:hidden flex items-center">
             <ThemeToggle />
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
@@ -294,6 +294,6 @@ export default function Navbar({ className }: { className?: string }) {
           </div>
         </div>
       </nav>
-    </div>
+    </nav>
   );
 }

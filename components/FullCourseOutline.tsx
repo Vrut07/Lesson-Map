@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/accordion';
 import { BookOpen, FileText, Loader2, AlertCircle, Library } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MdRoute } from "react-icons/md";
 
 // Types
 interface Lesson {
@@ -37,15 +38,15 @@ interface Course {
 interface CourseOutlineViewerProps {
   apiEndpoint?: string;
   className?: string;
-  initialCourses?: Course[];
+  courses?: Course[];
 }
 
 export default function FullCourseOutline({
-  initialCourses = [],
+  courses,
   className = ''
 }: CourseOutlineViewerProps) {
 
-  if (initialCourses.length === 0) {
+  if (courses?.length === 0) {
     return (
       <Alert className="m-4">
         <BookOpen className="h-4 w-4" />
@@ -55,29 +56,28 @@ export default function FullCourseOutline({
   }
 
   return (
-    <div className={`w-full my-10 mx-auto ${className}`}>
+    <div className={`w-full px-5 mx-auto ${className}`}>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2 mb-2">
-          <Library className="h-8 w-8" />
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2 mb-2">
+          <MdRoute className="h-8 w-8" />
           Course Outline Preview
         </h1>
         <p className="text-muted-foreground">
-          {initialCourses.length} {initialCourses.length === 1 ? 'course' : 'courses'} Total
+          {courses?.length} {courses?.length === 1 ? 'course' : 'courses'} Total
         </p>
       </div>
 
-      {/* Courses Accordion */}
-      <Accordion type="multiple" className="">
-        {initialCourses.map((course) => (
+      <Accordion type="multiple" className="flex flex-col items-center gap-4">
+        {courses?.map((course) => (
           <AccordionItem
             key={course.id}
             value={course.id}
-            className=""
+            className="rounded-xl w-full border backdrop-blur-sm shadow-sm hover:shadow-md transition-all"
           >
-            <AccordionTrigger className="hover:no-underline">
+            <AccordionTrigger className="px-5 py-4 hover:no-underline text-left rounded-xl">
               <div className="flex items-start gap-4 text-left w-full">
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-semibold text-foreground mb-1">
+                  <h2 className="text-base font-semibold text-foreground mb-1">
                     {course.courseName}
                   </h2>
                   <p className="text-sm text-muted-foreground line-clamp-2">
@@ -97,9 +97,8 @@ export default function FullCourseOutline({
               </div>
             </AccordionTrigger>
 
-            <AccordionContent className="">
+            <AccordionContent className="px-5 pb-5">
               {course.Module.length > 0 ? (
-                /* Modules Accordion (nested) */
                 <Accordion type="multiple" className="space-y-3 mt-2">
                   {course.Module
                     .sort((a, b) => a.order - b.order)
@@ -107,7 +106,7 @@ export default function FullCourseOutline({
                       <AccordionItem
                         key={module.id}
                         value={module.id}
-                        className="border rounded-md bg-muted/50"
+                        className="border rounded-lg bg-muted/30"
                       >
                         <AccordionTrigger className="px-4 py-3 hover:no-underline">
                           <div className="flex items-start gap-3 text-left w-full">
