@@ -16,11 +16,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { redirect } from 'next/navigation'
 
 const Dashboard = async () => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
+
+  if (!session) {
+    redirect('/sign-in');
+  }
 
   const initialCourses = await db.course.findMany({
     where: { userId: session?.session.userId },
@@ -35,6 +40,7 @@ const Dashboard = async () => {
 
   return (
     <>
+      hello DASHBOARD
       <div className="border-b/50 bg-background w-full mx-auto pt-32 h-[calc(100vh-20rem)] text-center">
         <div className="flex flex-col items-center mb-4">
           <Library className="h-12 w-12 text-primary mb-2 border p-2.5 rounded-full" />
