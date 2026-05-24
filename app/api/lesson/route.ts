@@ -1,11 +1,7 @@
-"use server";
-
 import { db } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { createLessonsBulkSchema, lessonSchema } from "@/lib/validation";
-import { Lesson } from "@prisma/client";
 
 //  GET — Fetch all lessons for the logged-in user
 export async function GET() {

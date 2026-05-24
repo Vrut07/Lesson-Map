@@ -5,6 +5,7 @@ import { AuroraText } from "@/components/ui/aurora-text";
 import { redirect } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { LiaAngleRightSolid } from "react-icons/lia";
+import { LightRays } from "./ui/light-rays";
 
 const Hero = () => {
   const { data: session } = useSession();
@@ -37,9 +38,9 @@ const Hero = () => {
               Get Started
               <LiaAngleRightSolid />
             </>
-
           </Button>
         </div>
+        <LightRays />
         {/* <LightRays /> */}
       </section>
 

@@ -1,10 +1,7 @@
-"use server";
 import { db } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { createCourseSchema } from "@/lib/validation";
-import { revalidatePath } from "next/cache";
 
 // Get all courses with their modules
 export async function GET() {

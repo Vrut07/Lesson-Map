@@ -8,13 +8,11 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Eye, PlusIcon, Trash2 } from "lucide-react"
-import Navbar from "@/components/Nav/Navbar"
 import { exampleCourses } from "@/constants"
 
 const ExamplePage = () => {
   return (
     <>
-      <Navbar />
       <section className="container mx-auto py-20">
         <div className="flex my-10 flex-col md:flex-row justify-between md:px-10 px-4">
           <div className="flex items-start flex-col">

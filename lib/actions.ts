@@ -19,6 +19,27 @@ async function createCourseAction(data: unknown) {
     throw new Error("Unauthorized");
   }
 
+  const userId = session.session.userId;
+
+  // Fetch user plan and current course count
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { plan: true },
+  });
+
+  const courseCount = await db.course.count({
+    where: { userId },
+  });
+
+  // Limit check
+  if (user?.plan === "FREE" && courseCount >= 3) {
+    return {
+      success: false,
+      limitReached: true,
+      message: "You've reached the limit of 3 courses on the Free plan. Please upgrade to create more!",
+    };
+  }
+
   const result = createCourseSchema.safeParse(data);
   if (!result.success) {
     const errors: Record<string, string> = {};
@@ -33,7 +54,7 @@ async function createCourseAction(data: unknown) {
     data: {
       courseName: result.data.courseName,
       description: result.data.description,
-      userId: session.session.userId,
+      userId: userId,
     },
   });
 
@@ -178,4 +199,49 @@ async function createLessonsAction(data: unknown) {
     };
   }
 }
-export { createCourseAction, createModulesAction, createLessonsAction };
+async function reorderModulesAction(courseId: string, moduleIds: string[]) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session.userId;
+
+    if (!userId) {
+      throw new Error("Unauthorized: Please log in to continue.");
+    }
+
+    const course = await db.course.findFirst({
+      where: { id: courseId, userId },
+    });
+
+    if (!course) {
+      throw new Error("Course not found or not owned by user.");
+    }
+
+    // Update orders in a transaction
+    await db.$transaction(
+      moduleIds.map((id, index) =>
+        db.module.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    );
+
+    revalidatePath(`/dashboard/${courseId}/edit`);
+    revalidatePath("/dashboard");
+    revalidatePath("/");
+
+    return { success: true, message: "Modules reordered successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message || "Failed to reorder modules.",
+    };
+  }
+}
+
+export {
+  createCourseAction,
+  createModulesAction,
+  createLessonsAction,
+  reorderModulesAction,
+};

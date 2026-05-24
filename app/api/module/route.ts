@@ -1,12 +1,7 @@
-"use server";
-
 import { db } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { createModulesBulkSchema, moduleSchema } from "@/lib/validation";
-import { Module } from "@prisma/client";
-import { revalidatePath } from "next/cache";
 
 //  GET — Fetch all modules (for the logged-in user)
 export async function GET() {
