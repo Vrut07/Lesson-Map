@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createCourseAction } from "@/lib/actions";
@@ -11,17 +16,19 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { IoSparklesSharp } from "react-icons/io5";
+import { Course } from "@prisma/client";
 
 interface CourseFormProps {
   errors?: Record<string, string>;
+  courseData?: Course;
 }
 
-export default function CreateCourseForm({ errors }: CourseFormProps) {
+export default function EditCourseForm({ errors, courseData }: CourseFormProps) {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
 
-  const router = useRouter();
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -47,23 +54,7 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
 
     try {
       const res = await createCourseAction(result.data);
-      if (res.success) {
-        toast.success("Course created successfully!");
-        router.push("/dashboard");
-      } else if ("limitReached" in res && res.limitReached) {
-        toast.error(res.message as string, {
-          description: "Upgrade your plan to unlock unlimited courses.",
-          action: {
-            label: "View Plans",
-            onClick: () => router.push("/pricing"),
-          },
-        });
-        setTimeout(() => {
-          router.push("/pricing");
-        }, 2000);
-      } else {
-        setFormErrors(res.errors || { global: "Failed to create course" });
-      }
+      if (res.success) toast.success("Course Update!");
     } catch (err) {
       setFormErrors({ global: (err as Error).message });
       toast.error((err as Error).message);
@@ -75,12 +66,8 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
   const handleAIAssist = async () => {
     setAiLoading(true);
     setTimeout(() => {
-      const titleInput = document.getElementById(
-        "courseName",
-      ) as HTMLInputElement;
-      const descInput = document.getElementById(
-        "description",
-      ) as HTMLTextAreaElement;
+      const titleInput = document.getElementById("courseName") as HTMLInputElement;
+      const descInput = document.getElementById("description") as HTMLTextAreaElement;
       if (titleInput && descInput) {
         titleInput.value = "Next.js 15 Masterclass: From Zero to Production";
         descInput.value =
@@ -96,10 +83,7 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
     <div className="w-full mt-8 space-y-6">
       <div className="flex flex-col text-left sm:flex-row justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Create & Manage Courses</h2>
-          <p className="text-sm text-muted-foreground">
-            Create new courses outline and manage them.
-          </p>
+          <h2 className="text-lg font-semibold">Edit Course</h2>
         </div>
         <Button
           type="button"
@@ -120,12 +104,15 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
         </Button>
       </div>
 
-      {/* Form */}
+
       <form onSubmit={handleSubmit} className="">
         <FieldSet>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="courseName" className="text-sm font-medium">
+              <FieldLabel
+                htmlFor="courseName"
+                className="text-sm font-medium"
+              >
                 Course Title
               </FieldLabel>
               <Input
@@ -134,6 +121,7 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
                 autoComplete="off"
                 placeholder="e.g., Mastering TypeScript for React Developers"
                 className="text-sm"
+                defaultValue={courseData ? courseData.courseName : ''}
               />
               {mergedErrors?.courseName && (
                 <p className="text-xs text-destructive mt-1">
@@ -142,7 +130,6 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
               )}
             </Field>
 
-            {/* Description */}
             <Field>
               <FieldLabel
                 htmlFor="description"
@@ -155,6 +142,7 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
                 name="description"
                 autoComplete="off"
                 className="text-sm min-h-[100px]"
+                defaultValue={courseData ? courseData.description : ''}
                 placeholder="Briefly describe what this course is about..."
               />
               {mergedErrors?.description && (
@@ -164,14 +152,12 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
               )}
             </Field>
 
-            {/* Global Error */}
             {mergedErrors?.global && (
               <p className="text-xs text-destructive">{mergedErrors.global}</p>
             )}
           </FieldGroup>
         </FieldSet>
 
-        {/* Actions */}
         <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
           <Button
             type="submit"
@@ -184,7 +170,7 @@ export default function CreateCourseForm({ errors }: CourseFormProps) {
                 Creating...
               </>
             ) : (
-              "Create Course"
+              "Update Course"
             )}
           </Button>
         </div>

@@ -1,232 +1,164 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { courseOutline } from "@/constants"
-import { Fullscreen, FullscreenIcon, Menu, Share, Share2, User2Icon, CheckCircle2 } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "../ui/button"
-import ThemeToggle from "../ThemeToggle"
-import { MdOutlineFullscreen, MdFullscreenExit } from "react-icons/md";
 
-const SingleOutline = ({ id }: { id: string }) => {
-  const [activeModule, setActiveModule] = useState(courseOutline.modules[0])
-  const [activeLesson, setActiveLesson] = useState<number | null>(null)
+type Lesson = {
+  id: string
+  lessonName: string
+  order: number
+}
+
+type Module = {
+  id: string
+  moduleName: string
+  description: string
+  order: number
+  Lesson: Lesson[]
+}
+
+type Course = {
+  id: string
+  courseName: string
+  description: string
+  Module: Module[]
+}
+
+const SingleOutline = ({ course }: { course: Course }) => {
+  const modules = course.Module ?? []
+
+  const [activeModule, setActiveModule] = useState<Module | null>(
+    modules.length ? modules[0] : null
+  )
   const [search, setSearch] = useState("")
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [completedLessons, setCompletedLessons] = useState<{ [moduleId: string]: number[] }>({})
+  const [completedLessons, setCompletedLessons] = useState<Record<string, string[]>>({})
 
-  // Load completed lessons from localStorage on mount
+  /* ---------- local progress ---------- */
   useEffect(() => {
-    const stored = localStorage.getItem(`course-progress-${id}`)
-    if (stored) {
-      setCompletedLessons(JSON.parse(stored))
-    }
-  }, [id])
+    const stored = localStorage.getItem(`course-progress-${course.id}`)
+    if (stored) setCompletedLessons(JSON.parse(stored))
+  }, [course.id])
 
   useEffect(() => {
-    localStorage.setItem(`course-progress-${id}`, JSON.stringify(completedLessons))
-  }, [completedLessons, id])
+    localStorage.setItem(
+      `course-progress-${course.id}`,
+      JSON.stringify(completedLessons)
+    )
+  }, [completedLessons, course.id])
 
-  const toggleLessonCompletion = (moduleId: string, lessonIndex: number) => {
+  const toggleLesson = (moduleId: string, lessonId: string) => {
     setCompletedLessons((prev) => {
-      const moduleLessons = prev[moduleId] || []
-      if (moduleLessons.includes(lessonIndex)) {
-        return {
-          ...prev,
-          [moduleId]: moduleLessons.filter((i) => i !== lessonIndex),
-        }
-      } else {
-        return {
-          ...prev,
-          [moduleId]: [...moduleLessons, lessonIndex],
-        }
+      const list = prev[moduleId] || []
+      return {
+        ...prev,
+        [moduleId]: list.includes(lessonId)
+          ? list.filter((id) => id !== lessonId)
+          : [...list, lessonId],
       }
     })
   }
 
-  const filteredModules = courseOutline.modules.filter(
+  const filteredModules = modules.filter(
     (m) =>
-      m.title.toLowerCase().includes(search.toLowerCase()) ||
-      m.subtitle.toLowerCase().includes(search.toLowerCase())
+      m.moduleName.toLowerCase().includes(search.toLowerCase()) ||
+      m.description.toLowerCase().includes(search.toLowerCase())
   )
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => {
-        setIsFullscreen(true)
-      }).catch(err => {
-        console.error("Error attempting to enable fullscreen:", err)
-      })
-    } else {
-      document.exitFullscreen().then(() => {
-        setIsFullscreen(false)
-      }).catch(err => {
-        console.error("Error attempting to exit fullscreen:", err)
-      })
-    }
-  }
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
-    }
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange)
-    }
-  }, [])
-
   return (
-    <section className="container relative mx-auto px-6 space-y-8 py-10">
-      <div className="absolute top-18 right-6 border rounded-full flex gap-2 py-0.5 px-2 items-center bg-popover">
-        <ThemeToggle />
-        <div
-          className="h-5 w-5 cursor-pointer"
-          onClick={toggleFullscreen}
-        >
-          {isFullscreen ? <MdFullscreenExit className="h-5 w-5" /> : <MdOutlineFullscreen className="h-5 w-5" />}
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size={"icon"} className="rounded-full">
-              <Menu className="opacity-70" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem>
-              <Share2 /> Share
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <User2Icon /> Ayush Khatri
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+    <section className="container mx-auto px-6 py-20 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">{course.courseName}</h1>
+        <p className="text-muted-foreground">{course.description}</p>
       </div>
-      <div className="space-y-2 md:py-10 pt-28">
-        <h1 className="text-3xl font-bold">
-          {courseOutline.title}
-        </h1>
-        <p className="text-muted-foreground max-w-3xl">
-          {courseOutline.description}
+
+      <Input
+        placeholder="Search modules..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {modules.length === 0 && (
+        <p className="text-center text-muted-foreground">
+          No modules added yet
         </p>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Input
-          type="text"
-          placeholder="Search modules or topics..."
-          className="w-full border-border"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-        <div className="flex flex-col gap-2 w-full">
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="space-y-2">
           {filteredModules.map((module, idx) => (
             <div
               key={module.id}
-              onClick={() => {
-                setActiveModule(module)
-                setActiveLesson(null)
-              }}
+              onClick={() => setActiveModule(module)}
               className={cn(
-                "rounded-lg border px-4 py-3 cursor-pointer transition-all w-full",
-                "hover:border-primary/60 hover:bg-primary/5",
-                activeModule.id === module.id
+                "border rounded-lg p-4 cursor-pointer",
+                activeModule?.id === module.id
                   ? "border-primary bg-primary/10"
-                  : "border-muted bg-muted/40"
+                  : "bg-muted/40"
               )}
             >
-              <div className="flex items-center w-full justify-between mb-1">
-                <Badge
-                  variant={
-                    activeModule.id === module.id ? "default" : "secondary"
-                  }
-                  className="text-xs font-medium"
-                >
-                  Module {idx + 1}
-                </Badge>
+              <div className="flex justify-between mb-1">
+                <Badge>Module {idx + 1}</Badge>
                 <Badge variant="outline">
-                  {completedLessons[module.id]?.length || 0}/{module.lessons.length} Completed
+                  {completedLessons[module.id]?.length ?? 0}/
+                  {module.Lesson.length}
                 </Badge>
               </div>
-              <h1 className="font-semibold text-lg">
-                {module.title}
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                {module.subtitle}
+
+              <h2 className="font-semibold">{module.moduleName}</h2>
+              <p className="text-muted-foreground text-sm">
+                {module.description}
               </p>
             </div>
           ))}
         </div>
-        <div className="col-span-2 rounded-lg border bg-muted/40 px-6 py-5 shadow-sm">
-          <div className="flex md:flex-row flex-col gap-5 justify-between items-center mb-4">
-            <div>
-              <h1 className="font-semibold text-xl">
-                {activeModule.title}
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                {activeModule.subtitle}
-              </p>
-            </div>
-            <div className="flex gap-2 items-center flex-wrap">
-              <Badge variant={"outline"} className="text-sm">
-                Total {activeModule.lessons.length} Lessons
-              </Badge>
-              <Badge variant={"outline"} className="text-sm bg-green-500/10 text-green-500">
-                {completedLessons[activeModule.id]?.length || 0} Completed
-              </Badge>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-            {activeModule.lessons.map((lesson, i) => (
-              <div
-                key={i}
-                onClick={() => setActiveLesson(i)}
-                className={cn(
-                  "border rounded-md px-3 py-2 text-sm cursor-pointer transition flex items-center",
-                  activeLesson === i
-                    ? "bg-accent border-primary"
-                    : "bg-background hover:bg-accent/60"
-                )}
-              >
-                <span className="text-primary text-base font-medium mr-2">
-                  {i + 1}.
-                </span>
-                <h1 className="text-base inline-flex flex-1">
-                  {lesson}
-                </h1>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleLessonCompletion(activeModule.id, i)
-                  }}
-                >
-                  <CheckCircle2
-                    className={cn(
-                      "h-6 w-6",
-                      completedLessons[activeModule.id]?.includes(i)
-                        ? "text-green-500"
-                        : "text-gray-400"
-                    )}
-                  />
-                </Button>
+
+        <div className="col-span-2 border rounded-lg p-6">
+          {!activeModule ? (
+            <p className="text-muted-foreground">Select a module</p>
+          ) : activeModule.Lesson.length === 0 ? (
+            <p className="text-muted-foreground">
+              No lessons in this module
+            </p>
+          ) : (
+            <>
+              <h2 className="text-xl font-semibold mb-4">
+                {activeModule.moduleName}
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {activeModule.Lesson.map((lesson, i) => (
+                  <div
+                    key={lesson.id}
+                    className="border rounded-md p-3 flex items-center"
+                  >
+                    <span className="mr-2 font-medium">{i + 1}.</span>
+                    <span className="flex-1">{lesson.lessonName}</span>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        toggleLesson(activeModule.id, lesson.id)
+                      }
+                    >
+                      <CheckCircle2
+                        className={cn(
+                          "h-5 w-5",
+                          completedLessons[activeModule.id]?.includes(lesson.id)
+                            ? "text-green-500"
+                            : "text-gray-400"
+                        )}
+                      />
+                    </Button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </section>

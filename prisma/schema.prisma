@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -14,12 +13,36 @@ model User {
   emailVerified Boolean   @default(false)
   image         String?
   createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
   Course        Course[]
   accounts      Account[]
   sessions      Session[]
 
+  plan               Plan    @default(FREE)
+  subscriptionId     String? @unique
+  customerId         String? @unique
+  subscriptionStatus String?
+
   @@map("user")
+}
+
+model Example {
+  id             String   @id @default(cuid())
+  title          String
+  description    String
+  category       String? // "Programming", "Design", "Business", etc.
+  tags           String[] // ["react", "beginner", "web-dev"]
+  templateData   Json     @default("{}")
+  isPublished    Boolean  @default(true)
+  difficulty     String? // "beginner", "intermediate", "advanced"
+  estimatedHours Int? // Estimated time to complete
+  usageCount     Int      @default(0)
+  createdBy      String? // Admin user who created it
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  @@index([category])
+  @@index([isPublished])
+  @@map("example")
 }
 
 model Course {
@@ -29,6 +52,8 @@ model Course {
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   Module      Module[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 model Module {
@@ -39,14 +64,18 @@ model Module {
   courseId    String
   Lesson      Lesson[]
   course      Course   @relation(fields: [courseId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 model Lesson {
-  id         String @id @default(cuid())
+  id         String   @id @default(cuid())
   lessonName String
   order      Int
   moduleId   String
-  module     Module @relation(fields: [moduleId], references: [id])
+  module     Module   @relation(fields: [moduleId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 }
 
 model Session {
@@ -91,4 +120,10 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+enum Plan {
+  FREE
+  CREATOR
+  PROFESSIONAL
 }

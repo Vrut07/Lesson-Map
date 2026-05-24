@@ -17,6 +17,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { redirect } from 'next/navigation'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
 
 const Dashboard = async () => {
   const session = await auth.api.getSession({
@@ -29,6 +41,9 @@ const Dashboard = async () => {
 
   const initialCourses = await db.course.findMany({
     where: { userId: session?.session.userId },
+    orderBy: {
+      createdAt: "desc",
+    },
     include: {
       Module: {
         include: {
@@ -40,7 +55,6 @@ const Dashboard = async () => {
 
   return (
     <>
-      hello DASHBOARD
       <div className="border-b/50 bg-background w-full mx-auto pt-32 h-[calc(100vh-20rem)] text-center">
         <div className="flex flex-col items-center mb-4">
           <Library className="h-12 w-12 text-primary mb-2 border p-2.5 rounded-full" />
@@ -129,13 +143,30 @@ const Dashboard = async () => {
                 <AccordionContent className="px-5 pb-5">
                   <div className="flex flex-wrap items-center gap-2 py-3">
                     <Button variant="secondary" size="xs" asChild>
-                      <Link href={`#`}>Edit Course</Link>
+                      <Link href={`/dashboard/${course.id}/edit`}>Edit Course</Link>
                     </Button>
-                    <Button variant="destructive" size="xs">
-                      Delete Course
-                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger>
+                        <Button variant="destructive" size="xs">
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your course outline
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction>Continue</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                     <Button variant="link" size="xs" asChild>
-                      <Link href={`#`}>View Course</Link>
+                      <Link href={`/outline/${course.id}`}>View Course</Link>
                     </Button>
                   </div>
 

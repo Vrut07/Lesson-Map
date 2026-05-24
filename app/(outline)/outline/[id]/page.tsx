@@ -1,22 +1,26 @@
-import SingleOutline from "@/components/outline/SingleOutline";
+import SingleOutline from "@/components/outline/SingleOutline"
+import { db } from "@/lib/prisma"
 
- 
-interface PageProps {
-	params: Promise<{
-		id: string
-	}>;
-}
-const SingleOutlinePage = async ({
-	params
-}:
-	PageProps
-) => {
-	const { id } = await params;
-	return (
-		<section>
-			<SingleOutline id={id} />
-		</section>
-	)
-}
+export default async function Page({
+	params,
+}: {
+	params: { id: string }
+}) {
+	const course = await db.course.findUnique({
+		where: { id: params.id },
+		include: {
+			Module: {
+				orderBy: { order: "asc" },
+				include: {
+					Lesson: {
+						orderBy: { order: "asc" },
+					},
+				},
+			},
+		},
+	})
 
-export default SingleOutlinePage
+	if (!course) return <div>Course not found</div>
+
+	return <SingleOutline course={course} />
+}
