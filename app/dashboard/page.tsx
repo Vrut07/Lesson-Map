@@ -1,6 +1,37 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import { headers } from "next/headers";
+
+// Type definitions
+type Lesson = {
+  id: string;
+  lessonName: string;
+  order: number;
+  moduleId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type Module = {
+  id: string;
+  description: string;
+  moduleName: string;
+  order: number;
+  courseId: string;
+  Lesson: Lesson[];
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type CourseWithRelations = {
+  id: string;
+  courseName: string;
+  description: string;
+  userId: string;
+  Module: Module[];
+  createdAt: Date;
+  updatedAt: Date;
+};
 import {
   Accordion,
   AccordionContent,
@@ -83,16 +114,16 @@ const Dashboard = async () => {
                 </Badge>
                 <Badge variant="outline" className="text-xs md:text-sm">
                   {initialCourses.reduce(
-                    (acc, c) => acc + c.Module.length,
+                    (acc: number, c: CourseWithRelations) => acc + c.Module.length,
                     0
                   )}{" "}
                   Modules
                 </Badge>
                 <Badge variant="outline" className="text-xs md:text-sm">
                   {initialCourses.reduce(
-                    (acc, c) =>
+                    (acc: number, c: CourseWithRelations) =>
                       acc +
-                      c.Module.reduce((mAcc, m) => mAcc + m.Lesson.length, 0),
+                      c.Module.reduce((mAcc: number, m: Module) => mAcc + m.Lesson.length, 0),
                     0
                   )}{" "}
                   Lessons
@@ -107,7 +138,7 @@ const Dashboard = async () => {
           </div>
 
           <Accordion type="multiple" className="space-y-4">
-            {initialCourses.map((course) => (
+            {initialCourses.map((course: CourseWithRelations) => (
               <AccordionItem
                 key={course.id}
                 value={course.id}
@@ -131,7 +162,7 @@ const Dashboard = async () => {
                       <span>•</span>
                       <span>
                         {course.Module.reduce(
-                          (acc, mod) => acc + mod.Lesson.length,
+                          (acc: number, mod: Module) => acc + mod.Lesson.length,
                           0
                         )}{" "}
                         lessons
@@ -172,8 +203,8 @@ const Dashboard = async () => {
 
                   {course.Module.length > 0 ? (
                     <Accordion type="multiple" className="space-y-3 mt-2">
-                      {course.Module.sort((a, b) => a.order - b.order).map(
-                        (module, idx) => (
+                      {course.Module.sort((a: Module, b: Module) => a.order - b.order).map(
+                        (module: Module, idx: number) => (
                           <AccordionItem
                             key={module.id}
                             value={module.id}
@@ -206,8 +237,8 @@ const Dashboard = async () => {
                             <AccordionContent className="px-4 pb-3 space-y-2">
                               {module.Lesson.length > 0 ? (
                                 module.Lesson.sort(
-                                  (a, b) => (a.order || 0) - (b.order || 0)
-                                ).map((lesson, lessonIdx) => (
+                                  (a: Lesson, b: Lesson) => (a.order || 0) - (b.order || 0)
+                                ).map((lesson: Lesson, lessonIdx: number) => (
                                   <div
                                     key={lesson.id}
                                     className="flex items-start gap-3 p-3 rounded-md bg-card shadow-sm border transition-colors"

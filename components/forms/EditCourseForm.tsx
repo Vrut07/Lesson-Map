@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createCourseAction } from "@/lib/actions";
@@ -16,18 +11,20 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { IoSparklesSharp } from "react-icons/io5";
-import { Course } from "@prisma/client";
+import { Course } from "@/app/generated/prisma/client";
 
 interface CourseFormProps {
   errors?: Record<string, string>;
   courseData?: Course;
 }
 
-export default function EditCourseForm({ errors, courseData }: CourseFormProps) {
+export default function EditCourseForm({
+  errors,
+  courseData,
+}: CourseFormProps) {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
-
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -66,8 +63,12 @@ export default function EditCourseForm({ errors, courseData }: CourseFormProps) 
   const handleAIAssist = async () => {
     setAiLoading(true);
     setTimeout(() => {
-      const titleInput = document.getElementById("courseName") as HTMLInputElement;
-      const descInput = document.getElementById("description") as HTMLTextAreaElement;
+      const titleInput = document.getElementById(
+        "courseName",
+      ) as HTMLInputElement;
+      const descInput = document.getElementById(
+        "description",
+      ) as HTMLTextAreaElement;
       if (titleInput && descInput) {
         titleInput.value = "Next.js 15 Masterclass: From Zero to Production";
         descInput.value =
@@ -104,15 +105,11 @@ export default function EditCourseForm({ errors, courseData }: CourseFormProps) 
         </Button>
       </div>
 
-
       <form onSubmit={handleSubmit} className="">
         <FieldSet>
           <FieldGroup>
             <Field>
-              <FieldLabel
-                htmlFor="courseName"
-                className="text-sm font-medium"
-              >
+              <FieldLabel htmlFor="courseName" className="text-sm font-medium">
                 Course Title
               </FieldLabel>
               <Input
@@ -121,7 +118,7 @@ export default function EditCourseForm({ errors, courseData }: CourseFormProps) 
                 autoComplete="off"
                 placeholder="e.g., Mastering TypeScript for React Developers"
                 className="text-sm"
-                defaultValue={courseData ? courseData.courseName : ''}
+                defaultValue={courseData ? courseData.courseName : ""}
               />
               {mergedErrors?.courseName && (
                 <p className="text-xs text-destructive mt-1">
@@ -142,7 +139,7 @@ export default function EditCourseForm({ errors, courseData }: CourseFormProps) 
                 name="description"
                 autoComplete="off"
                 className="text-sm min-h-[100px]"
-                defaultValue={courseData ? courseData.description : ''}
+                defaultValue={courseData ? courseData.description : ""}
                 placeholder="Briefly describe what this course is about..."
               />
               {mergedErrors?.description && (
