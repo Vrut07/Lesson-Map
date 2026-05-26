@@ -22,7 +22,7 @@ const CreateNewPage = async () => {
       },
     },
   });
-  const modules = courses.flatMap((module) => module.Module);
+  const modules = courses.flatMap((module: any) => module.Module);
   return (
     <section className="max-w-[90rem] mx-auto my-32 w-full grid md:grid-cols-2 items-start gap-10">
       <div className="order-2 px-4">

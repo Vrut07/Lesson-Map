@@ -1,26 +1,22 @@
-import SingleOutline from "@/components/outline/SingleOutline"
-import { db } from "@/lib/prisma"
+import SingleOutline from "@/components/outline/SingleOutline";
+import { db } from "@/lib/prisma";
 
-export default async function Page({
-	params,
-}: {
-	params: { id: string }
-}) {
-	const course = await db.course.findUnique({
-		where: { id: params.id },
-		include: {
-			Module: {
-				orderBy: { order: "asc" },
-				include: {
-					Lesson: {
-						orderBy: { order: "asc" },
-					},
-				},
-			},
-		},
-	})
+export default async function Page({ params }: { params: { id: string } }) {
+  const course = await db.course.findUnique({
+    where: { id: params.id },
+    include: {
+      Module: {
+        orderBy: { order: "asc" },
+        include: {
+          Lesson: {
+            orderBy: { order: "asc" },
+          },
+        },
+      },
+    },
+  });
 
-	if (!course) return <div>Course not found</div>
+  if (!course) return <div>Course not found</div>;
 
-	return <SingleOutline course={course} />
+  return <SingleOutline course={course} />;
 }
