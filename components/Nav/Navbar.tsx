@@ -34,7 +34,7 @@ const NavbarItem = ({ item, href }: { item: string; href: string }) => {
       href={href}
       className={cn(
         "relative text-sm font-medium transition-colors hover:text-foreground/80",
-        pathName === href ? "text-foreground" : "text-foreground/60"
+        pathName === href ? "text-foreground" : "text-foreground/60",
       )}
     >
       {item}
@@ -54,8 +54,6 @@ const MobileNavItem = ({ item, href }: { item: string; href: string }) => {
     </SheetClose>
   );
 };
-
-
 
 const UserProfileDropdown = ({
   user,
@@ -83,7 +81,9 @@ const UserProfileDropdown = ({
               src={user.image || undefined}
               alt={user.name || "User"}
             />
-            <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
+            <AvatarFallback className="text-xs">
+              {getInitials(user.name)}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -214,8 +214,8 @@ export default function Navbar({ className }: { className?: string }) {
   return (
     <nav
       className={cn(
-        "fixed top-0  inset-x-0 z-50 md:px-5 shadow-sm bg-transparent backdrop-blur",
-        className
+        "fixed top-0 z-[999]  inset-x-0 md:px-5 shadow-sm bg-transparent backdrop-blur",
+        className,
       )}
     >
       <nav className="container mx-auto flex h-14 py-2 max-w-screen-2xl items-center px-4">
@@ -270,7 +270,11 @@ export default function Navbar({ className }: { className?: string }) {
 
                 <nav className="flex-1 flex flex-col space-y-2">
                   {navItems.map((nav, index) => (
-                    <MobileNavItem key={index} item={nav.item} href={nav.href} />
+                    <MobileNavItem
+                      key={index}
+                      item={nav.item}
+                      href={nav.href}
+                    />
                   ))}
                 </nav>
                 {!isPending && (
