@@ -1,6 +1,5 @@
 import { createAuthClient } from "better-auth/react";
 
 export const { signIn, signUp, useSession, signOut } = createAuthClient({
-  baseURL: "http://localhost:3000",
-  // baseURL: "https://lessonmap.vercel.app",
+  baseURL: process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
 });
