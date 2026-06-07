@@ -1,8 +1,46 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import { headers } from "next/headers";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  BookOpen,
+  FileText,
+  Layers,
+  Plus,
+  Sparkles,
+  GraduationCap,
+  ChevronRight,
+  BarChart3,
+  Clock,
+  Edit3,
+  Trash2,
+  Eye,
+  PenLine,
+} from "lucide-react";
 
-// Type definitions
+// ── Types ────────────────────────────────────────────────────────────────────
 type Lesson = {
   id: string;
   lessonName: string;
@@ -32,252 +70,509 @@ type CourseWithRelations = {
   createdAt: Date;
   updatedAt: Date;
 };
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  BookOpen,
-  FileText,
-  Library,
-  PlusIcon,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { redirect } from 'next/navigation'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function timeAgo(date: Date): string {
+  const diff = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${days}d ago`;
+}
 
-const Dashboard = async () => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+// ── Stat card ────────────────────────────────────────────────────────────────
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  sub,
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ElementType;
+  sub?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10">
+          <Icon className="h-4 w-4 text-amber-400" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-lg font-bold leading-none text-white">{value}</p>
+          <p className="mt-1 truncate text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+            {label}
+          </p>
+          {sub && (
+            <p className="mt-0.5 truncate text-[10px] text-zinc-600">{sub}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  if (!session) {
-    redirect('/sign-in');
-  }
-
-  const initialCourses = await db.course.findMany({
-    where: { userId: session?.session.userId },
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      Module: {
-        include: {
-          Lesson: true,
-        },
-      },
-    },
-  });
+// ── Course card row in accordion ─────────────────────────────────────────────
+function CourseAccordionItem({
+  course,
+  index,
+}: {
+  course: CourseWithRelations;
+  index: number;
+}) {
+  const totalLessons = course.Module.reduce((acc, m) => acc + m.Lesson.length, 0);
+  const completionPct =
+    course.Module.length > 0
+      ? Math.round((totalLessons / Math.max(course.Module.length * 3, 1)) * 100)
+      : 0;
 
   return (
-    <>
-      <div className="border-b/50 bg-background w-full mx-auto pt-32 h-[calc(100vh-20rem)] text-center">
-        <div className="flex flex-col items-center mb-4">
-          <Library className="h-12 w-12 text-primary mb-2 border p-2.5 rounded-full" />
-          <h1 className="text-2xl md:text-4xl font-bold tracking-tight">
-            Course Outline Dashboard
-          </h1>
-        </div>
-        <p className="text-muted-foreground text-sm md:text-base">
-          Manage and explore your course outlines easily with a structured,
-          modern interface.
-        </p>
-      </div>
-
-      <div className="min-h-screen bg-background text-foreground px-4 md:px-10 py-20">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between mb-6">
-            <div className="flex flex-col md:flex-row items-start my-3 md:my-0md:items-center justify-start gap-3">
-              <h2 className="text-xl md:text-3xl font-semibold flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary" />
-                Your All Courses Outlines
-              </h2>
-              <div className="flex flex-wrap md:items-center gap-2">
-                <Badge variant="outline" className="text-xs md:text-sm">
-                  {initialCourses.length}{" "}
-                  {initialCourses.length === 1 ? "Course" : "Courses"}
-                </Badge>
-                <Badge variant="outline" className="text-xs md:text-sm">
-                  {initialCourses.reduce(
-                    (acc: number, c: CourseWithRelations) => acc + c.Module.length,
-                    0
-                  )}{" "}
-                  Modules
-                </Badge>
-                <Badge variant="outline" className="text-xs md:text-sm">
-                  {initialCourses.reduce(
-                    (acc: number, c: CourseWithRelations) =>
-                      acc +
-                      c.Module.reduce((mAcc: number, m: Module) => mAcc + m.Lesson.length, 0),
-                    0
-                  )}{" "}
-                  Lessons
-                </Badge>
-              </div>
-            </div>
-            <Button className="gap-2" size="sm" asChild>
-              <Link href="/dashboard/create/new">
-                <PlusIcon className="mr-2 h-4 w-4" /> Create Course
-              </Link>
-            </Button>
+    <AccordionItem
+      value={course.id}
+      className="group overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40 transition-all duration-300 data-[state=open]:border-amber-500/30"
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
+      {/* Course header trigger */}
+      <AccordionTrigger className="w-full px-6 py-5 text-left transition-colors hover:bg-white/[0.02] hover:no-underline [&>svg]:hidden [&[data-state=open]]:bg-amber-500/[0.03]">
+        <div className="flex items-center gap-4 w-full">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-400">
+            {course.courseName.charAt(0).toUpperCase()}
           </div>
 
-          <Accordion type="multiple" className="space-y-4">
-            {initialCourses.map((course: CourseWithRelations) => (
+          {/* Title + meta */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="max-w-xs truncate text-base font-semibold leading-snug text-white">
+                {course.courseName}
+              </h2>
+              {course.Module.length === 0 && (
+                <Badge
+                  variant="outline"
+                  className="border-zinc-700 text-[10px] text-zinc-500"
+                >
+                  Draft
+                </Badge>
+              )}
+            </div>
+            <p className="mt-0.5 line-clamp-1 text-xs text-zinc-500">
+              {course.description || "No description"}
+            </p>
+          </div>
+
+          {/* Right meta chips */}
+          <div className="hidden sm:flex items-center gap-3 flex-shrink-0 mr-2">
+            <span className="flex items-center gap-1 text-xs text-zinc-500">
+              <Layers className="w-3.5 h-3.5" />
+              {course.Module.length} modules
+            </span>
+            <span className="text-zinc-700">·</span>
+            <span className="flex items-center gap-1 text-xs text-zinc-500">
+              <BookOpen className="w-3.5 h-3.5" />
+              {totalLessons} lessons
+            </span>
+            <span className="text-zinc-700">·</span>
+            <span className="flex items-center gap-1 text-xs text-zinc-500">
+              <Clock className="w-3.5 h-3.5" />
+              {timeAgo(course.updatedAt)}
+            </span>
+          </div>
+
+          <ChevronRight className="h-4 w-4 shrink-0 text-zinc-500 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+        </div>
+      </AccordionTrigger>
+
+      {/* Expanded body */}
+      <AccordionContent className="px-6 pb-6">
+        {/* Thin progress bar */}
+        <div className="mb-5 h-1 w-full overflow-hidden rounded-full bg-zinc-800">
+          <div
+            className="h-full rounded-full bg-amber-500 transition-all duration-700"
+            style={{ width: `${Math.min(completionPct, 100)}%` }}
+          />
+        </div>
+
+        {/* Action bar */}
+        <div className="flex flex-wrap items-center gap-2 mb-5">
+          <Button
+            size="sm"
+            className="h-8 gap-1.5 bg-amber-500 text-xs font-semibold text-black hover:bg-amber-400"
+            asChild
+          >
+            <Link href={`/dashboard/${course.id}/edit`}>
+              <Edit3 className="w-3.5 h-3.5" /> Edit Course
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 border-zinc-700 bg-transparent text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            asChild
+          >
+            <Link href={`/outline/${course.id}`}>
+              <Eye className="w-3.5 h-3.5" /> View Outline
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 text-xs text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
+            asChild
+          >
+            <Link href={`/dashboard/${course.id}/edit`}>
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" /> AI Assist
+            </Link>
+          </Button>
+
+          <div className="ml-auto">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-zinc-500 hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete "{course.courseName}"?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this course outline and all its modules
+                    and lessons. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+                    Delete Course
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+
+        {/* Modules */}
+        {course.Module.length > 0 ? (
+          <Accordion type="multiple" className="space-y-2.5">
+            {course.Module.sort((a, b) => a.order - b.order).map((module, idx) => (
               <AccordionItem
-                key={course.id}
-                value={course.id}
-                className="rounded-xl w-full border backdrop-blur-sm shadow-sm hover:shadow-md transition-all"
+                key={module.id}
+                value={module.id}
+                className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/50"
               >
-                <AccordionTrigger className="px-5 py-4 hover:no-underline text-left rounded-xl">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between w-full gap-3">
-                    <div>
-                      <h2 className="text-lg font-semibold mb-1 flex items-center justify-between gap-2">
-                        {course.courseName}
-                      </h2>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {course.description}
-                      </p>
+                <AccordionTrigger className="px-4 py-3 transition-colors hover:bg-white/[0.02] hover:no-underline [&>svg]:hidden">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-xs font-bold text-zinc-500">
+                      {idx + 1}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3.5 w-3.5" />
-                        {course.Module.length} modules
-                      </span>
-                      <span>•</span>
-                      <span>
-                        {course.Module.reduce(
-                          (acc: number, mod: Module) => acc + mod.Lesson.length,
-                          0
-                        )}{" "}
-                        lessons
-                      </span>
+
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-sm font-medium leading-snug text-zinc-200">
+                        {module.moduleName}
+                      </p>
+                      {module.description && (
+                        <p className="mt-0.5 line-clamp-1 text-xs text-zinc-500">
+                          {module.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mr-1 flex shrink-0 items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className="h-5 border-zinc-700 text-[10px] text-zinc-500"
+                      >
+                        {module.Lesson.length}{" "}
+                        {module.Lesson.length === 1 ? "lesson" : "lessons"}
+                      </Badge>
+                      <ChevronRight className="h-3.5 w-3.5 text-zinc-500 transition-transform duration-200 group-data-[state=open]:rotate-90" />
                     </div>
                   </div>
                 </AccordionTrigger>
 
-                <AccordionContent className="px-5 pb-5">
-                  <div className="flex flex-wrap items-center gap-2 py-3">
-                    <Button variant="secondary" size="xs" asChild>
-                      <Link href={`/dashboard/${course.id}/edit`}>Edit Course</Link>
-                    </Button>
+                <AccordionContent className="px-4 pb-4">
+                  <Separator className="mb-3 bg-white/[0.05]" />
+                  {module.Lesson.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {module.Lesson.sort(
+                        (a, b) => (a.order || 0) - (b.order || 0)
+                      ).map((lesson, lessonIdx) => (
+                        <div
+                          key={lesson.id}
+                          className="group/lesson flex items-center gap-3 rounded-lg border border-zinc-800/60 bg-zinc-950/40 px-3 py-2.5 transition-all hover:border-zinc-700"
+                        >
+                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-zinc-700 text-[10px] font-semibold text-zinc-500">
+                            {lessonIdx + 1}
+                          </div>
 
-                    <AlertDialog>
-                      <AlertDialogTrigger>
-                        <Button variant="destructive" size="xs">
-                          Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete your course outline
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction>Continue</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                    <Button variant="link" size="xs" asChild>
-                      <Link href={`/outline/${course.id}`}>View Course</Link>
-                    </Button>
-                  </div>
+                          <p className="flex-1 text-sm font-medium leading-snug text-zinc-200">
+                            {lesson.lessonName || `Lesson ${lessonIdx + 1}`}
+                          </p>
 
-                  {course.Module.length > 0 ? (
-                    <Accordion type="multiple" className="space-y-3 mt-2">
-                      {course.Module.sort((a: Module, b: Module) => a.order - b.order).map(
-                        (module: Module, idx: number) => (
-                          <AccordionItem
-                            key={module.id}
-                            value={module.id}
-                            className="border rounded-lg bg-muted/30"
-                          >
-                            <AccordionTrigger className="px-4 py-3 text-left hover:no-underline">
-                              <div className="flex items-start justify-between w-full">
-                                <div className="flex items-start gap-3">
-                                  <div className="flex-shrink-0 w-7 h-7 bg-primary/10 text-primary rounded-md flex items-center justify-center text-sm font-semibold">
-                                    {idx + 1}
-                                  </div>
-                                  <div>
-                                    <h3 className="font-medium text-base mb-1">
-                                      {module.moduleName}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground line-clamp-2">
-                                      {module.description}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      {module.Lesson.length}{" "}
-                                      {module.Lesson.length === 1
-                                        ? "lesson"
-                                        : "lessons"}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            </AccordionTrigger>
-
-                            <AccordionContent className="px-4 pb-3 space-y-2">
-                              {module.Lesson.length > 0 ? (
-                                module.Lesson.sort(
-                                  (a: Lesson, b: Lesson) => (a.order || 0) - (b.order || 0)
-                                ).map((lesson: Lesson, lessonIdx: number) => (
-                                  <div
-                                    key={lesson.id}
-                                    className="flex items-start gap-3 p-3 rounded-md bg-card shadow-sm border transition-colors"
-                                  >
-                                    <div className="flex-shrink-0 w-6 h-6 border rounded flex items-center justify-center text-xs font-medium">
-                                      {lessonIdx + 1}
-                                    </div>
-                                    <div className="flex-1">
-                                      <h4 className="font-medium text-sm leading-tight">
-                                        {lesson.lessonName ||
-                                          `Lesson ${lessonIdx + 1}`}
-                                      </h4>
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="text-center py-4 text-muted-foreground">
-                                  <FileText className="h-6 w-6 mx-auto mb-2 opacity-60" />
-                                  <p className="text-xs">No lessons added yet</p>
-                                </div>
-                              )}
-                            </AccordionContent>
-                          </AccordionItem>
-                        )
-                      )}
-                    </Accordion>
+                          <PenLine className="h-3.5 w-3.5 text-transparent transition-colors group-hover/lesson:text-zinc-500" />
+                        </div>
+                      ))}
+                    </div>
                   ) : (
-                    <div className="text-center py-6 text-muted-foreground">
-                      <FileText className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No modules created yet</p>
+                    <div className="py-5 text-center text-zinc-500">
+                      <FileText className="mx-auto mb-1.5 h-5 w-5 opacity-40" />
+                      <p className="text-xs">No lessons added yet</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 h-7 gap-1 text-xs text-zinc-400 hover:text-zinc-200"
+                        asChild
+                      >
+                        <Link href={`/dashboard/${course.id}/edit`}>
+                          <Plus className="w-3 h-3" /> Add lessons
+                        </Link>
+                      </Button>
                     </div>
                   )}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
+        ) : (
+          <div className="rounded-xl border border-dashed border-zinc-800 py-10 text-center">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/60">
+              <Layers className="h-5 w-5 text-zinc-500 opacity-60" />
+            </div>
+            <p className="text-sm font-medium text-zinc-400">No modules yet</p>
+            <p className="mb-3 text-xs text-zinc-600">
+              Start building your course structure
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 border-zinc-700 text-xs text-zinc-300 hover:bg-zinc-800"
+              asChild
+            >
+              <Link href={`/dashboard/${course.id}/edit`}>
+                <Plus className="w-3.5 h-3.5" /> Add First Module
+              </Link>
+            </Button>
+          </div>
+        )}
+      </AccordionContent>
+    </AccordionItem>
+  );
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center px-6 py-24 text-center">
+      <div className="relative mb-6">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/10">
+          <GraduationCap className="h-10 w-10 text-amber-400 opacity-80" />
+        </div>
+        <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950">
+          <Sparkles className="h-3.5 w-3.5 text-amber-400" />
         </div>
       </div>
-    </>
+      <h3 className="mb-2 text-xl font-bold text-white">No courses yet</h3>
+      <p className="mb-6 max-w-xs text-sm leading-relaxed text-zinc-500">
+        Create your first course outline and start mapping lessons with AI-assisted structuring.
+      </p>
+      <Button className="gap-2 bg-amber-500 font-semibold text-black hover:bg-amber-400" asChild>
+        <Link href="/dashboard/create/new">
+          <Plus className="w-4 h-4" /> Create Your First Course
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+const Dashboard = async () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) redirect("/sign-in");
+
+  const initialCourses: CourseWithRelations[] = await db.course.findMany({
+    where: { userId: session.session.userId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      Module: {
+        include: { Lesson: true },
+      },
+    },
+  });
+
+  const totalModules = initialCourses.reduce((a, c) => a + c.Module.length, 0);
+  const totalLessons = initialCourses.reduce(
+    (a, c) => a + c.Module.reduce((ma, m) => ma + m.Lesson.length, 0),
+    0
+  );
+  const recentCourse = initialCourses[0];
+  const firstName = session.user?.name?.split(" ")[0] ?? "there";
+  const initials = session.user?.name
+    ? session.user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "U";
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-zinc-950/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-5 md:px-8">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500">
+              <Layers className="h-3.5 w-3.5 text-black" />
+            </div>
+            <span className="text-sm font-bold tracking-tight text-white">
+              LessonMap
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              className="hidden gap-1.5 bg-amber-500 font-semibold text-black hover:bg-amber-400 sm:flex"
+              asChild
+            >
+              <Link href="/dashboard/create/new">
+                <Plus className="w-3.5 h-3.5" /> New Course
+              </Link>
+            </Button>
+            <Avatar className="h-8 w-8 cursor-pointer">
+              <AvatarFallback className="bg-amber-500 text-xs font-bold text-black">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl space-y-8 px-5 py-8 md:px-8">
+        <section className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 px-6 py-8 md:px-10">
+          <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+            <div>
+              <p className="mb-1 text-xs font-medium uppercase tracking-widest text-zinc-500">
+                Welcome back
+              </p>
+              <h1 className="mb-1 text-2xl font-bold tracking-tight text-white md:text-3xl">
+                Hey, {firstName} 👋
+              </h1>
+              <p className="max-w-sm text-sm text-zinc-400">
+                {initialCourses.length === 0
+                  ? "Start mapping your first course and build structured learning journeys."
+                  : `You have ${initialCourses.length} ${initialCourses.length === 1 ? "course" : "courses"} in your workspace. Keep building!`}
+              </p>
+              {recentCourse && (
+                <div className="mt-3 flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-zinc-500" />
+                  <span className="text-xs text-zinc-500">
+                    Last edited{" "}
+                    <span className="font-medium text-zinc-300">
+                      {recentCourse.courseName}
+                    </span>{" "}
+                    {timeAgo(recentCourse.updatedAt)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex shrink-0 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-zinc-700 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                asChild
+              >
+                <Link href="/dashboard/create/new">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-400" /> AI Generate
+                </Link>
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1.5 bg-amber-500 text-xs font-semibold text-black hover:bg-amber-400"
+                asChild
+              >
+                <Link href="/dashboard/create/new">
+                  <Plus className="w-3.5 h-3.5" /> New Course
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Stat cards ────────────────────────────────────────────────── */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard
+            label="Total Courses"
+            value={initialCourses.length}
+            icon={GraduationCap}
+            sub="In your workspace"
+          />
+          <StatCard
+            label="Total Modules"
+            value={totalModules}
+            icon={Layers}
+            sub="Across all courses"
+          />
+          <StatCard
+            label="Total Lessons"
+            value={totalLessons}
+            icon={BookOpen}
+            sub="Mapped so far"
+          />
+          <StatCard
+            label="Avg. Lessons/Module"
+            value={totalModules > 0 ? (totalLessons / totalModules).toFixed(1) : "—"}
+            icon={BarChart3}
+            sub="Depth indicator"
+          />
+        </section>
+
+        {/* ── Course list ───────────────────────────────────────────────── */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-white">Your Courses</h2>
+              <Badge
+                variant="outline"
+                className="border-zinc-700 text-xs text-zinc-500"
+              >
+                {initialCourses.length}
+              </Badge>
+            </div>
+
+            {initialCourses.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-zinc-700 text-xs text-zinc-300 hover:bg-zinc-800"
+                asChild
+              >
+                <Link href="/dashboard/create/new">
+                  <Plus className="w-3.5 h-3.5" /> New Course
+                </Link>
+              </Button>
+            )}
+          </div>
+
+          {initialCourses.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <Accordion type="multiple" className="space-y-3">
+              {initialCourses.map((course, index) => (
+                <CourseAccordionItem
+                  key={course.id}
+                  course={course}
+                  index={index}
+                />
+              ))}
+            </Accordion>
+          )}
+        </section>
+      </main>
+    </div>
   );
 };
 
