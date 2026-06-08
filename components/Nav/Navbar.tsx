@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Menu, LogOut, User, Settings, Moon, Sun } from "lucide-react";
+import { Menu, LogOut, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -28,13 +27,17 @@ import ThemeToggle from "../ThemeToggle";
 
 const NavbarItem = ({ item, href }: { item: string; href: string }) => {
   const pathName = usePathname();
+  const isActive =
+    href === "/"
+      ? pathName === "/"
+      : pathName === href || pathName.startsWith(`${href}/`);
 
   return (
     <Link
       href={href}
       className={cn(
         "relative text-sm font-medium transition-colors hover:text-foreground/80",
-        pathName === href ? "text-foreground" : "text-foreground/60",
+        isActive ? "text-foreground" : "text-foreground/60",
       )}
     >
       {item}
@@ -214,7 +217,7 @@ export default function Navbar({ className }: { className?: string }) {
   return (
     <nav
       className={cn(
-        "fixed top-0 z-[999] border-b  inset-x-0 md:px-5 shadow-sm bg-transparent backdrop-blur",
+        "fixed top-0 z-[999] border-b inset-x-0 md:px-5 shadow-sm bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60",
         className,
       )}
     >
@@ -236,14 +239,24 @@ export default function Navbar({ className }: { className?: string }) {
             {!isPending && (
               <>
                 {session?.user ? (
-                  <UserProfileDropdown
-                    user={session.user}
-                    onSignOut={handleSignOut}
-                  />
+                  <>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href="/dashboard">Dashboard</Link>
+                    </Button>
+                    <UserProfileDropdown
+                      user={session.user}
+                      onSignOut={handleSignOut}
+                    />
+                  </>
                 ) : (
-                  <Button size="sm" asChild>
-                    <Link href="/sign-in">Get Started</Link>
-                  </Button>
+                  <>
+                    <Button size="sm" variant="ghost" asChild>
+                      <Link href="/sign-in">Log in</Link>
+                    </Button>
+                    <Button size="sm" asChild>
+                      <Link href="/sign-in">Get Started</Link>
+                    </Button>
+                  </>
                 )}
               </>
             )}
@@ -280,16 +293,30 @@ export default function Navbar({ className }: { className?: string }) {
                 {!isPending && (
                   <div className="mt-auto pt-6 border-t">
                     {session?.user ? (
-                      <MobileUserSection
-                        user={session.user}
-                        onSignOut={handleSignOut}
-                      />
+                      <>
+                        <SheetClose asChild>
+                          <Button className="w-full mb-3" asChild>
+                            <Link href="/dashboard">Go to Dashboard</Link>
+                          </Button>
+                        </SheetClose>
+                        <MobileUserSection
+                          user={session.user}
+                          onSignOut={handleSignOut}
+                        />
+                      </>
                     ) : (
-                      <SheetClose asChild>
-                        <Button className="w-full" asChild>
-                          <Link href="/sign-in">Get Started</Link>
-                        </Button>
-                      </SheetClose>
+                      <div className="space-y-2">
+                        <SheetClose asChild>
+                          <Button variant="outline" className="w-full" asChild>
+                            <Link href="/sign-in">Log in</Link>
+                          </Button>
+                        </SheetClose>
+                        <SheetClose asChild>
+                          <Button className="w-full" asChild>
+                            <Link href="/sign-in">Get Started</Link>
+                          </Button>
+                        </SheetClose>
+                      </div>
                     )}
                   </div>
                 )}

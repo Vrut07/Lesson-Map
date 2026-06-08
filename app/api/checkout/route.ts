@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         name: username,
         email: email,
       },
-      return_url: "https://lessonmap.vercel.app",
+      return_url: process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
     });
 
     return NextResponse.json({

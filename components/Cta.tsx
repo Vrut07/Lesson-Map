@@ -1,10 +1,15 @@
 "use client";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { AuroraText } from "./ui/aurora-text";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { useSession } from "@/lib/auth-client";
 
 const CallToAction = () => {
+  const { data: session } = useSession();
+  const ctaHref = session?.user ? "/dashboard" : "/sign-in";
+
   return (
     <>
       <div className="w-full relative">
@@ -91,10 +96,10 @@ const CallToAction = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="flex justify-center"
             >
-              <Button
-                size="lg"
-              >
-                Start Building Free
+              <Button size="lg" asChild>
+                <Link href={ctaHref}>
+                  {session?.user ? "Go to Dashboard" : "Start Building Free"}
+                </Link>
               </Button>
             </motion.div>
           </div>

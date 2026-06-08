@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FaGithub, FaGoogle } from "react-icons/fa";
@@ -11,15 +12,17 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const callbackURL = searchParams.get("callbackUrl") || "/dashboard";
 
   const handleSignIn = async () => {
     setIsLoading(true);
     try {
       await signIn.social({
         provider: "github",
-        callbackURL: "/",
+        callbackURL,
         errorCallbackURL: "/auth-error",
-        newUserCallbackURL: "/",
+        newUserCallbackURL: callbackURL,
       });
     } finally {
       setIsLoading(false);
