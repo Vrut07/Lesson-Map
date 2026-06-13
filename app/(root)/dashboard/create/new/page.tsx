@@ -51,6 +51,8 @@ import {
   Copy,
   Check,
   AlertTriangle,
+  Crown,
+  Sparkles,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -82,12 +84,12 @@ interface Module {
 // Resource type config (single source of truth)
 // ─────────────────────────────────────────────────────────────────────────
 const RESOURCE_TYPES: { value: ResourceType; icon: React.ElementType; badgeClass: string }[] = [
-  { value: "Code", icon: Code2, badgeClass: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
-  { value: "PDF", icon: FileText, badgeClass: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20" },
-  { value: "Link", icon: Link2, badgeClass: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20" },
-  { value: "Video", icon: Video, badgeClass: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20" },
-  { value: "Note", icon: StickyNote, badgeClass: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20" },
-  { value: "Image", icon: ImageIcon, badgeClass: "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/20" },
+  { value: "Code", icon: Code2, badgeClass: "bg-chart-1/15 text-chart-1 border-chart-1/25" },
+  { value: "PDF", icon: FileText, badgeClass: "bg-chart-2/15 text-chart-2 border-chart-2/25" },
+  { value: "Link", icon: Link2, badgeClass: "bg-chart-3/15 text-chart-3 border-chart-3/25" },
+  { value: "Video", icon: Video, badgeClass: "bg-destructive/15 text-destructive border-destructive/25" },
+  { value: "Note", icon: StickyNote, badgeClass: "bg-chart-4/15 text-chart-4 border-chart-4/25" },
+  { value: "Image", icon: ImageIcon, badgeClass: "bg-chart-5/15 text-chart-5 border-chart-5/25" },
 ];
 
 function getTypeConfig(type: ResourceType) {
@@ -166,7 +168,6 @@ const TABS = [
 ] as const;
 
 type TabValue = (typeof TABS)[number]["value"];
-type ViewMode = "accordion" | "flow";
 
 // ─────────────────────────────────────────────────────────────────────────
 // Add Lesson dialog (used inside Outline)
@@ -454,13 +455,11 @@ function OutlineTab({
   resources,
   setModules,
   setResources,
-  viewMode,
 }: {
   modules: Module[];
   resources: Resource[];
   setModules: React.Dispatch<React.SetStateAction<Module[]>>;
   setResources: React.Dispatch<React.SetStateAction<Resource[]>>;
-  viewMode: ViewMode;
 }) {
   const resourcesForLesson = (lessonId: string) =>
     resources.filter((r) => r.lessonId === lessonId);
@@ -499,10 +498,6 @@ function OutlineTab({
   const handleDeleteResource = (id: string) => {
     setResources((prev) => prev.filter((r) => r.id !== id));
   };
-
-  if (viewMode === "flow") {
-    return <FlowMapView modules={modules} resources={resources} />;
-  }
 
   return (
     <div className="space-y-3">
@@ -561,8 +556,8 @@ function OutlineTab({
                             <AccordionItem value={`res-${lesson.id}`} className="border-none">
                               <AccordionTrigger className="px-3.5 py-2 hover:no-underline [&>svg]:hidden group">
                                 <div className="flex items-center gap-2 w-full">
-                                  <Paperclip className="w-3 h-3 text-amber-500" />
-                                  <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 tracking-wide uppercase">
+                                  <Paperclip className="w-3 h-3 text-primary" />
+                                  <span className="text-[11px] font-semibold text-primary tracking-wide uppercase">
                                     Lesson Resources ({lessonResources.length})
                                   </span>
                                   <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-auto transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -598,66 +593,6 @@ function OutlineTab({
       })}
 
       <AddModuleDialog onAdd={handleAddModule} />
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// Flow Map View (alternative visualization)
-// ─────────────────────────────────────────────────────────────────────────
-function FlowMapView({ modules, resources }: { modules: Module[]; resources: Resource[] }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-6 overflow-x-auto">
-      <div className="flex flex-col gap-6 min-w-[600px]">
-        {modules.map((module, mi) => (
-          <div key={module.id} className="flex items-start gap-4">
-            {/* Module node */}
-            <div className="flex flex-col items-center flex-shrink-0 w-44">
-              <div className="w-full rounded-xl border-2 border-primary/30 bg-primary/5 px-4 py-3 text-center">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-wide mb-1">
-                  Module {mi + 1}
-                </p>
-                <p className="text-xs font-semibold leading-snug">{module.name.replace(/^Module \d+\s*—\s*/, "")}</p>
-              </div>
-              {mi < modules.length - 1 && (
-                <div className="w-px h-6 bg-border mt-1" />
-              )}
-            </div>
-
-            {/* Connector */}
-            <div className="flex-shrink-0 w-6 h-px bg-border mt-6" />
-
-            {/* Lessons row */}
-            <div className="flex flex-wrap gap-3 flex-1">
-              {module.lessons.map((lesson) => {
-                const count = resources.filter((r) => r.lessonId === lesson.id).length;
-                return (
-                  <div
-                    key={lesson.id}
-                    className="rounded-xl border border-border bg-background px-3.5 py-2.5 w-52 hover:border-primary/40 hover:shadow-sm transition-all"
-                  >
-                    <p className="text-xs font-semibold leading-snug truncate">{lesson.name}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
-                      {lesson.description}
-                    </p>
-                    {count > 0 && (
-                      <Badge variant="outline" className="text-[9px] mt-2 gap-1">
-                        <Paperclip className="w-2.5 h-2.5" />
-                        {count} {count === 1 ? "resource" : "resources"}
-                      </Badge>
-                    )}
-                  </div>
-                );
-              })}
-              {module.lessons.length === 0 && (
-                <div className="rounded-xl border border-dashed border-border px-3.5 py-2.5 w-52 text-center">
-                  <p className="text-[10px] text-muted-foreground">No lessons yet</p>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -1040,8 +975,87 @@ function PreviewDialog({
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Main Page Component
+// Upgrade Dialog (Flow Map → Creator Plan)
 // ─────────────────────────────────────────────────────────────────────────
+function UpgradeDialog({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
+            <Crown className="w-5 h-5 text-primary" />
+          </div>
+          <DialogTitle>Flow Map is a Creator Plan feature</DialogTitle>
+          <DialogDescription>
+            Visualize your course as an interactive flow diagram, with branching paths and module
+            connections — available on the Creator plan.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 py-2">
+          {[
+            "Visual flow map of modules & lessons",
+            "Unlimited courses and resources",
+            "AI-powered course regeneration",
+            "Priority support",
+          ].map((perk) => (
+            <div key={perk} className="flex items-center gap-2.5 text-sm">
+              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Check className="w-3 h-3 text-primary" />
+              </div>
+              {perk}
+            </div>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Maybe later
+          </Button>
+          <Button className="gap-1.5" onClick={() => setOpen(false)}>
+            <Sparkles className="w-3.5 h-3.5" />
+            Upgrade to Creator
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Navbar
+// ─────────────────────────────────────────────────────────────────────────
+function Navbar() {
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+          </div>
+          <span className="text-sm font-bold tracking-tight">LessonMap</span>
+        </div>
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
+          <a href="#" className="hover:text-foreground transition-colors">Home</a>
+          <a href="#" className="hover:text-foreground transition-colors">Examples</a>
+          <a href="#" className="text-foreground">Dashboard</a>
+          <a href="#" className="hover:text-foreground transition-colors">Pricing</a>
+        </nav>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="hidden sm:inline-flex">
+            Dashboard
+          </Button>
+          <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-semibold flex-shrink-0">
+            A
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+
 export default function CourseBuilderPage() {
   const [title, setTitle] = useState("Mastering Modern Web Development");
   const [description, setDescription] = useState(
@@ -1050,7 +1064,6 @@ export default function CourseBuilderPage() {
   const [modules, setModules] = useState<Module[]>(initialModules);
   const [resources, setResources] = useState<Resource[]>(initialResources);
   const [activeTab, setActiveTab] = useState<TabValue>("outline");
-  const [viewMode, setViewMode] = useState<ViewMode>("accordion");
   const [saved, setSaved] = useState(false);
 
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
@@ -1061,8 +1074,9 @@ export default function CourseBuilderPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <div className="min-h-screen w-full bg-background text-foreground">
+      <Navbar />
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* ── Top bar ───────────────────────────────────────────────── */}
         <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
           <div className="flex items-center gap-2">
@@ -1137,27 +1151,17 @@ export default function CourseBuilderPage() {
 
           {activeTab === "outline" && (
             <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border">
-              {[
-                { value: "accordion" as ViewMode, label: "Accordion", icon: LayoutList },
-                { value: "flow" as ViewMode, label: "Flow Map", icon: Workflow },
-              ].map((opt) => {
-                const Icon = opt.icon;
-                const active = viewMode === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => setViewMode(opt.value)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      active
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {opt.label}
-                  </button>
-                );
-              })}
+              <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-background text-foreground shadow-sm">
+                <LayoutList className="w-3.5 h-3.5" />
+                Accordion
+              </button>
+              <UpgradeDialog>
+                <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  <Workflow className="w-3.5 h-3.5" />
+                  Flow Map
+                  <Crown className="w-3 h-3 text-primary" />
+                </button>
+              </UpgradeDialog>
             </div>
           )}
         </div>
@@ -1170,7 +1174,6 @@ export default function CourseBuilderPage() {
               resources={resources}
               setModules={setModules}
               setResources={setResources}
-              viewMode={viewMode}
             />
           )}
           {activeTab === "resources" && (
