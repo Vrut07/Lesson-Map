@@ -671,7 +671,7 @@ function ResourcesTab({
 
           return (
             <Accordion key={module.id} type="single" collapsible defaultValue={module.id}>
-              <AccordionItem value={module.id} className="border border-border rounded-2xl bg-card overflow-hidden">
+              <AccordionItem value={module.id} className="border border-border rounded-2xl bg-background overflow-hidden">
                 <AccordionTrigger className="px-4 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&>svg]:hidden group">
                   <div className="flex items-center gap-2.5 w-full">
                     <Layers3 />
