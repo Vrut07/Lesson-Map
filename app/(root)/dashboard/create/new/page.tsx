@@ -290,28 +290,40 @@ function ResourceRow({
   resource,
   onTypeChange,
   onDelete,
+  linkedToLabel,
 }: {
   resource: Resource;
   onTypeChange: (id: string, type: ResourceType) => void;
   onDelete: (id: string) => void;
+  linkedToLabel?: string;
 }) {
   const config = getTypeConfig(resource.type);
   const Icon = config.icon;
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-background border border-border/60 hover:border-border transition-colors">
-      <div className="flex-shrink-0 w-8 h-8 rounded-md bg-muted flex items-center justify-center">
+    <div className="flex items-center gap-3 px-4 py-3 bg-background border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors">
+      <div className="flex-shrink-0 w-9 h-9 rounded-md bg-muted flex items-center justify-center">
         <Icon className="w-4 h-4 text-muted-foreground" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold leading-snug truncate">{resource.name}</p>
-        <p className="text-[10px] text-muted-foreground truncate">{resource.meta}</p>
+        <p className="text-sm font-semibold leading-snug truncate">{resource.name}</p>
+        <p className="text-xs text-muted-foreground truncate">
+          {resource.meta}
+          {linkedToLabel && (
+            <>
+              {" "}
+              <span className="text-muted-foreground/50">·</span>{" "}
+              <Paperclip className="w-2.5 h-2.5 inline-block mb-0.5 mr-0.5 opacity-60" />
+              Linked to <span className="font-semibold text-foreground">{linkedToLabel}</span>
+            </>
+          )}
+        </p>
       </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className={`flex-shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border text-[10px] font-semibold transition-colors ${config.badgeClass}`}
+            className={`flex-shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-xs font-semibold transition-colors ${config.badgeClass}`}
           >
             <Icon className="w-3 h-3" />
             {resource.type}
@@ -337,14 +349,21 @@ function ResourceRow({
       </DropdownMenu>
 
       <button
-        className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        className="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        title="Settings"
+        onClick={() => alert(`Editing "${resource.name}" (settings not wired up)`)}
+      >
+        <SlidersHorizontal className="w-3.5 h-3.5" />
+      </button>
+      <button
+        className="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         title="Open"
         onClick={() => alert(`Opening "${resource.name}" (preview not wired up)`)}
       >
         <ExternalLink className="w-3.5 h-3.5" />
       </button>
       <button
-        className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+        className="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
         title="Delete"
         onClick={() => onDelete(resource.id)}
       >
@@ -511,7 +530,7 @@ function OutlineTab({
           <Accordion key={module.id} type="single" collapsible defaultValue={module.id}>
             <AccordionItem
               value={module.id}
-              className="border border-border rounded-2xl bg-card overflow-hidden"
+              className="border border-border rounded-2xl bg-background overflow-hidden"
             >
               <AccordionTrigger className="px-4 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&>svg]:hidden group">
                 <div className="flex items-center gap-3 w-full">
@@ -531,7 +550,7 @@ function OutlineTab({
                     return (
                       <div
                         key={lesson.id}
-                        className="rounded-xl border border-border bg-muted/20 overflow-hidden"
+                        className="rounded-xl border border-border bg-background overflow-hidden"
                       >
                         <div className="flex items-start gap-3 px-3.5 py-3">
                           <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0 mt-0.5" />
@@ -564,7 +583,7 @@ function OutlineTab({
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent className="px-3.5 pb-3">
-                                <div className="space-y-1.5">
+                                <div className="rounded-lg border border-border overflow-hidden bg-background">
                                   {lessonResources.map((res) => (
                                     <ResourceRow
                                       key={res.id}
@@ -682,24 +701,21 @@ function ResourcesTab({
                     <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
+                <AccordionContent className="pb-0">
                   {moduleResources.length > 0 ? (
-                    <div className="space-y-1.5 mt-1">
+                    <div className="border-t border-border">
                       {moduleResources.map((res) => (
-                        <div key={res.id} className="space-y-0.5">
-                          <ResourceRow
-                            resource={res}
-                            onTypeChange={handleTypeChange}
-                            onDelete={handleDeleteResource}
-                          />
-                          <p className="text-[10px] text-muted-foreground pl-11">
-                            Linked to <span className="font-medium">{lessonNameById(res.lessonId)}</span>
-                          </p>
-                        </div>
+                        <ResourceRow
+                          key={res.id}
+                          resource={res}
+                          onTypeChange={handleTypeChange}
+                          onDelete={handleDeleteResource}
+                          linkedToLabel={lessonNameById(res.lessonId)}
+                        />
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-6">
+                    <div className="text-center py-6 border-t border-border">
                       <p className="text-xs text-muted-foreground">No resources match this filter.</p>
                     </div>
                   )}
@@ -739,7 +755,7 @@ function SettingsRow({
   destructive?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-4 rounded-2xl border border-border bg-card">
+    <div className="flex items-center justify-between gap-4 px-4 py-4 rounded-2xl border border-border bg-background">
       <div className="flex items-start gap-3 min-w-0">
         <div
           className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
@@ -878,7 +894,7 @@ function ShareTab() {
       />
 
       <div
-        className={`px-4 py-4 rounded-2xl border border-border bg-card transition-opacity ${
+        className={`px-4 py-4 rounded-2xl border border-border bg-background transition-opacity ${
           publicSharing ? "" : "opacity-50 pointer-events-none"
         }`}
       >
