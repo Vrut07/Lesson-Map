@@ -32,7 +32,7 @@ export const createModulesBulkSchema = z.object({
     .array(
       z.object({
         moduleName: z.string().min(1, "Module name is required"),
-        description: z.string().min(1, "Description is required"),
+        description: z.string().optional().default(""),
         order: z.number().int().min(1, "Order must be at least 1"),
       })
     )
