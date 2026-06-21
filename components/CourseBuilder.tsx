@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -72,6 +72,9 @@ import {
   Layers,
   Settings2,
   Share2,
+  Upload,
+  X,
+  FileImage,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
@@ -99,6 +102,13 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  CodeBlock,
+  CodeBlockHeader,
+  CodeBlockBody,
+  CodeBlockItem,
+  CodeBlockContent,
+} from "@/components/kibo-ui/code-block";
 
 // ── Types ──────────────────────────────────────────────────────────────
 export type ResourceType = "Code" | "PDF" | "Link" | "Video" | "Note" | "Image";
@@ -109,6 +119,7 @@ export interface Resource {
   meta: string;
   type: ResourceType;
   lessonId: string;
+  content?: string;
 }
 
 export interface Lesson {
@@ -187,7 +198,9 @@ function AddLessonDialog({
               id="lesson-name"
               placeholder="e.g. Async/Await Patterns"
               value={name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setName(e.target.value)
+              }
             />
           </div>
           <div className="space-y-1.5">
@@ -196,7 +209,9 @@ function AddLessonDialog({
               id="lesson-desc"
               placeholder="What will learners take away from this lesson?"
               value={description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setDescription(e.target.value)
+              }
               className="min-h-20"
             />
           </div>
@@ -254,7 +269,9 @@ function AddModuleDialog({
               id="module-name"
               placeholder="e.g. Module 4 — Working with APIs"
               value={name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setName(e.target.value)
+              }
             />
           </div>
           <div className="space-y-1.5">
@@ -263,7 +280,9 @@ function AddModuleDialog({
               id="module-desc"
               placeholder="What will learners learn in this module?"
               value={description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setDescription(e.target.value)
+              }
               className="min-h-20"
             />
           </div>
@@ -281,24 +300,152 @@ function AddModuleDialog({
   );
 }
 
+// ── File Upload Zone ──────────────────────────────────────────────────
+function FileUploadZone({
+  accept,
+  label,
+  icon: Icon,
+  hint,
+  onFile,
+}: {
+  accept: string;
+  label: string;
+  icon: React.ElementType;
+  hint: string;
+  onFile?: (file: File) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const handleFile = (file: File) => {
+    setSelectedFile(file);
+    onFile?.(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  const clearFile = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedFile(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return (
+    <div
+      className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-4 py-6 transition-colors cursor-pointer
+        ${
+          dragOver
+            ? "border-primary bg-primary/5"
+            : selectedFile
+              ? "border-border bg-muted/40"
+              : "border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/30"
+        }`}
+      onClick={() => !selectedFile && inputRef.current?.click()}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={handleChange}
+      />
+
+      {selectedFile ? (
+        <div className="flex items-center gap-3 w-full">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg border bg-background flex items-center justify-center">
+            <Icon className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate">
+              {selectedFile.name}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {(selectedFile.size / 1024).toFixed(1)} KB
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            onClick={clearFile}
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl border bg-background flex items-center justify-center">
+            <Upload className="w-4.5 h-4.5 text-muted-foreground" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-foreground">
+              Drop your {label} here
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs px-3"
+            onClick={(e) => {
+              e.stopPropagation();
+              inputRef.current?.click();
+            }}
+          >
+            Browse files
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Add Resource Dialog ───────────────────────────────────────────────
 function AddResourceDialog({
   lessonName,
   onAdd,
 }: {
   lessonName: string;
-  onAdd: (name: string, meta: string, type: ResourceType) => void;
+  onAdd: (name: string, meta: string, type: ResourceType, content?: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [meta, setMeta] = useState("");
   const [type, setType] = useState<ResourceType>("Link");
+  const [noteContent, setNoteContent] = useState("");
+  const [codeContent, setCodeContent] = useState("");
 
   const handleSubmit = () => {
     if (!name.trim()) return;
-    onAdd(name.trim(), meta.trim() || "Untitled resource", type);
+    const finalMeta =
+      type === "Code"
+        ? `${
+            codeContent.split("\n").length
+          } lines · ${name}`
+        : meta.trim() || "Untitled resource";
+    onAdd(name.trim(), finalMeta, type, type === "Code" ? codeContent : undefined);
     setName("");
     setMeta("");
+    setNoteContent("");
+    setCodeContent("");
     setType("Link");
     setOpen(false);
   };
@@ -311,59 +458,160 @@ function AddResourceDialog({
           Add Resource
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Add resource</DialogTitle>
           <DialogDescription>
             Attach a resource to{" "}
             <span className="font-medium text-foreground">{lessonName}</span>.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
+
+        <div className="space-y-4 py-2 overflow-y-auto flex-1">
+          {/* ── Type selector ── */}
+          <div className="space-y-1.5">
+            <Label>Type</Label>
+            <div className="rounded-lg border bg-muted/30 p-1">
+              <ToggleGroup
+                type="single"
+                value={type}
+                onValueChange={(v: string) => v && setType(v as ResourceType)}
+                className="flex flex-wrap items-center gap-1 justify-start"
+              >
+                {RESOURCE_TYPES.map((t) => {
+                  const TIcon = t.icon;
+                  return (
+                    <ToggleGroupItem
+                      key={t.value}
+                      value={t.value}
+                      size="sm"
+                      className="gap-1.5 text-xs rounded-md h-7 px-2.5 data-[state=on]:bg-background data-[state=on]:border data-[state=on]:border-border data-[state=on]:shadow-sm"
+                    >
+                      <TIcon className="w-3 h-3" />
+                      {t.value}
+                    </ToggleGroupItem>
+                  );
+                })}
+              </ToggleGroup>
+            </div>
+          </div>
+
+          {/* ── Name ── */}
           <div className="space-y-1.5">
             <Label htmlFor="res-name">Name</Label>
             <Input
               id="res-name"
-              placeholder="e.g. async-await.js"
-              value={name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="res-meta">Details</Label>
-            <Input
-              id="res-meta"
-              placeholder="e.g. 3 KB · snippet"
-              value={meta}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMeta(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Type</Label>
-            <ToggleGroup
-              type="single"
-              value={type}
-              onValueChange={(v: string) => v && setType(v as ResourceType)}
-              className="flex flex-wrap gap-2 justify-start"
-            >
-              {RESOURCE_TYPES.map((t) => {
-                const TIcon = t.icon;
-                return (
-                  <ToggleGroupItem
-                    key={t.value}
-                    value={t.value}
-                    size="sm"
-                    className="gap-1.5 text-xs"
-                  >
-                    <TIcon className="w-3 h-3" />
-                    {t.value}
-                  </ToggleGroupItem>
-                );
-              })}
-            </ToggleGroup>
-          </div>
+              placeholder={
+                  type === "PDF"
+                    ? "e.g. Week 1 Reading.pdf"
+                    : type === "Image"
+                      ? "e.g. Architecture Diagram.png"
+                      : type === "Note"
+                        ? "e.g. Key Takeaways"
+                        : type === "Code"
+                          ? "e.g. async-await.js"
+                          : type === "Video"
+                            ? "e.g. Intro Lecture"
+                            : "e.g. MDN Docs"
+                }
+                value={name}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setName(e.target.value)
+                }
+              />
+            </div>
+
+            {/* ── Type-specific inputs ── */}
+          {type === "PDF" && (
+            <div className="space-y-1.5">
+              <Label>PDF File</Label>
+              <FileUploadZone
+                accept=".pdf,application/pdf"
+                label="PDF"
+                icon={FileText}
+                hint="PDF up to 50 MB"
+                onFile={(f) =>
+                  setMeta(`${(f.size / 1024).toFixed(1)} KB · ${f.name}`)
+                }
+              />
+            </div>
+          )}
+
+          {type === "Image" && (
+            <div className="space-y-1.5">
+              <Label>Image File</Label>
+              <FileUploadZone
+                accept="image/*"
+                label="image"
+                icon={FileImage}
+                hint="PNG, JPG, GIF, SVG up to 10 MB"
+                onFile={(f) =>
+                  setMeta(`${(f.size / 1024).toFixed(1)} KB · ${f.name}`)
+                }
+              />
+            </div>
+          )}
+
+          {type === "Note" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="res-note">Note content</Label>
+              <Textarea
+                id="res-note"
+                placeholder="Write your note here…"
+                value={noteContent}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                  setNoteContent(e.target.value);
+                  setMeta(
+                    e.target.value.slice(0, 80) +
+                      (e.target.value.length > 80 ? "…" : ""),
+                  );
+                }}
+                className="min-h-28 max-h-48 resize-none text-sm"
+              />
+            </div>
+          )}
+
+          {type === "Code" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="res-code">Code</Label>
+              <Textarea
+                id="res-code"
+                placeholder="Paste your code here…"
+                value={codeContent}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setCodeContent(e.target.value)
+                }
+                className="min-h-32 max-h-64 resize-y text-sm font-mono leading-relaxed overflow-y-auto"
+                spellCheck={false}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                {codeContent
+                  ? `${codeContent.split("\n").length} lines`
+                  : "Syntax highlighted preview in lesson resources"}
+              </p>
+            </div>
+          )}
+
+          {(type === "Link" || type === "Video") && (
+            <div className="space-y-1.5">
+              <Label htmlFor="res-meta">Details</Label>
+              <Input
+                id="res-meta"
+                placeholder={
+                  type === "Link"
+                    ? "e.g. https://developer.mozilla.org"
+                    : "e.g. 12 min · YouTube"
+                }
+                value={meta}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setMeta(e.target.value)
+                }
+              />
+            </div>
+          )}
         </div>
-        <DialogFooter>
+
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
@@ -453,7 +701,9 @@ function ResourceRow({
         size="icon"
         className="h-8 w-8 flex-shrink-0"
         title="Settings"
-        onClick={() => alert(`Editing "${resource.name}" (settings not wired up)`)}
+        onClick={() =>
+          alert(`Editing "${resource.name}" (settings not wired up)`)
+        }
       >
         <SlidersHorizontal className="w-3.5 h-3.5" />
       </Button>
@@ -462,7 +712,9 @@ function ResourceRow({
         size="icon"
         className="h-8 w-8 flex-shrink-0"
         title="Open"
-        onClick={() => alert(`Opening "${resource.name}" (preview not wired up)`)}
+        onClick={() =>
+          alert(`Opening "${resource.name}" (preview not wired up)`)
+        }
       >
         <ExternalLink className="w-3.5 h-3.5" />
       </Button>
@@ -480,12 +732,17 @@ function ResourceRow({
 }
 
 // ── Drag handle context ───────────────────────────────────────────────
-const DragHandleContext = React.createContext<Record<string, unknown> | undefined>(undefined);
+const DragHandleContext = React.createContext<
+  Record<string, unknown> | undefined
+>(undefined);
 
 function DragHandle({ children }: { children: React.ReactNode }) {
   const listeners = React.useContext(DragHandleContext);
   return (
-    <span className="cursor-grab active:cursor-grabbing touch-none inline-flex" {...listeners}>
+    <span
+      className="cursor-grab active:cursor-grabbing touch-none inline-flex"
+      {...listeners}
+    >
       {children}
     </span>
   );
@@ -499,7 +756,14 @@ function SortableModuleItem({
   module: Module;
   children: React.ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: module.id,
   });
 
@@ -527,7 +791,14 @@ function SortableLessonItem({
   lessonId: string;
   children: React.ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: lessonId,
   });
 
@@ -543,6 +814,15 @@ function SortableLessonItem({
         {children}
       </div>
     </DragHandleContext.Provider>
+  );
+}
+
+// ── Index Badge ───────────────────────────────────────────────────────
+function IndexBadge({ index }: { index: number }) {
+  return (
+    <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full border border-border bg-muted text-[10px] font-semibold text-muted-foreground leading-none select-none">
+      {index}
+    </span>
   );
 }
 
@@ -562,12 +842,17 @@ function OutlineTab({
 }) {
   const [isAddingModule, setIsAddingModule] = useState(false);
   const [addingLessonFor, setAddingLessonFor] = useState<string | null>(null);
+  // Track which code accordions have been opened (lazy-load Shiki)
+  const [openedCodeAccordions, setOpenedCodeAccordions] = useState<Set<string>>(
+    new Set(),
+  );
 
   const moduleSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
-  const resourcesForLesson = (lessonId: string) => resources.filter((r) => r.lessonId === lessonId);
+  const resourcesForLesson = (lessonId: string) =>
+    resources.filter((r) => r.lessonId === lessonId);
 
   const handleModuleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -579,9 +864,10 @@ function OutlineTab({
       const reordered = arrayMove(modules, oldIndex, newIndex);
       setModules(reordered);
       if (courseId) {
-        reorderModulesAction(courseId, reordered.map((m) => m.id)).catch(() =>
-          toast.error("Failed to persist module order."),
-        );
+        reorderModulesAction(
+          courseId,
+          reordered.map((m) => m.id),
+        ).catch(() => toast.error("Failed to persist module order."));
       }
     },
     [modules, setModules, courseId],
@@ -596,16 +882,27 @@ function OutlineTab({
     try {
       const result = await createModulesAction({
         courseId,
-        modules: [{ moduleName: name, description: description || "", order: modules.length + 1 }],
+        modules: [
+          {
+            moduleName: name,
+            description: description || "",
+            order: modules.length + 1,
+          },
+        ],
       });
       if (result.success && result.data && result.data.length > 0) {
         const created = result.data[0];
-        setModules((prev) => [...prev, { id: created.id, name: created.moduleName, lessons: [] }]);
+        setModules((prev) => [
+          ...prev,
+          { id: created.id, name: created.moduleName, lessons: [] },
+        ]);
         toast.success("Module added!");
       } else {
         const errResult = result as Record<string, unknown>;
         if (errResult.errors) {
-          const messages = Object.values(errResult.errors as Record<string, string>).join(", ");
+          const messages = Object.values(
+            errResult.errors as Record<string, string>,
+          ).join(", ");
           toast.error(messages);
         } else {
           toast.error((errResult.error as string) || "Failed to add module.");
@@ -618,7 +915,11 @@ function OutlineTab({
     }
   };
 
-  const handleAddLesson = async (moduleId: string, name: string, description: string) => {
+  const handleAddLesson = async (
+    moduleId: string,
+    name: string,
+    description: string,
+  ) => {
     if (!courseId) {
       toast.error("Save the course first before adding lessons.");
       return;
@@ -636,7 +937,13 @@ function OutlineTab({
         setModules((prev) =>
           prev.map((m) =>
             m.id === moduleId
-              ? { ...m, lessons: [...m.lessons, { id: created.id, name: created.lessonName, description }] }
+              ? {
+                  ...m,
+                  lessons: [
+                    ...m.lessons,
+                    { id: created.id, name: created.lessonName, description },
+                  ],
+                }
               : m,
           ),
         );
@@ -644,7 +951,9 @@ function OutlineTab({
       } else {
         const errResult = result as Record<string, unknown>;
         if (errResult.errors) {
-          const messages = Object.values(errResult.errors as Record<string, string>).join(", ");
+          const messages = Object.values(
+            errResult.errors as Record<string, string>,
+          ).join(", ");
           toast.error(messages);
         } else {
           toast.error((errResult.error as string) || "Failed to add lesson.");
@@ -664,24 +973,43 @@ function OutlineTab({
       setModules((prev) => {
         const targetModule = prev.find((m) => m.id === moduleId);
         if (!targetModule) return prev;
-        const oldIndex = targetModule.lessons.findIndex((l) => l.id === active.id);
-        const newIndex = targetModule.lessons.findIndex((l) => l.id === over.id);
+        const oldIndex = targetModule.lessons.findIndex(
+          (l) => l.id === active.id,
+        );
+        const newIndex = targetModule.lessons.findIndex(
+          (l) => l.id === over.id,
+        );
         if (oldIndex === -1 || newIndex === -1) return prev;
-        const reorderedLessons = arrayMove(targetModule.lessons, oldIndex, newIndex);
-        // Fire-and-forget persist — outside the updater after the return
+        const reorderedLessons = arrayMove(
+          targetModule.lessons,
+          oldIndex,
+          newIndex,
+        );
         queueMicrotask(() => {
-          reorderLessonsAction(moduleId, reorderedLessons.map((l) => l.id)).catch(() =>
-            toast.error("Failed to persist lesson order."),
-          );
+          reorderLessonsAction(
+            moduleId,
+            reorderedLessons.map((l) => l.id),
+          ).catch(() => toast.error("Failed to persist lesson order."));
         });
-        return prev.map((m) => (m.id === moduleId ? { ...m, lessons: reorderedLessons } : m));
+        return prev.map((m) =>
+          m.id === moduleId ? { ...m, lessons: reorderedLessons } : m,
+        );
       });
     },
     [],
   );
 
-  const handleAddResource = (lessonId: string, name: string, meta: string, type: ResourceType) => {
-    setResources((prev) => [...prev, { id: `res-${Date.now()}`, name, meta, type, lessonId }]);
+  const handleAddResource = (
+    lessonId: string,
+    name: string,
+    meta: string,
+    type: ResourceType,
+    content?: string,
+  ) => {
+    setResources((prev) => [
+      ...prev,
+      { id: `res-${Date.now()}`, name, meta, type, lessonId, content },
+    ]);
   };
   const handleTypeChange = (id: string, type: ResourceType) => {
     setResources((prev) => prev.map((r) => (r.id === id ? { ...r, type } : r)));
@@ -693,20 +1021,34 @@ function OutlineTab({
   const moduleIds = modules.map((m) => m.id);
 
   return (
-    <DndContext sensors={moduleSensors} collisionDetection={closestCenter} onDragEnd={handleModuleDragEnd}>
+    <DndContext
+      sensors={moduleSensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleModuleDragEnd}
+    >
       <SortableContext items={moduleIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3">
-          {modules.map((module) => (
+          {modules.map((module, moduleIndex) => (
             <SortableModuleItem key={module.id} module={module}>
               <Accordion type="single" collapsible defaultValue={module.id}>
-                <AccordionItem value={module.id} className="border rounded-2xl overflow-hidden">
+                <AccordionItem
+                  value={module.id}
+                  className="border rounded-2xl overflow-hidden"
+                >
                   <AccordionTrigger className="px-4 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&>svg]:hidden group">
                     <div className="flex items-center gap-3 w-full">
                       <DragHandle>
                         <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
                       </DragHandle>
-                      <p className="text-sm font-semibold flex-1 text-left truncate">{module.name}</p>
-                      <Badge variant="secondary" className="text-[10px] font-medium flex-shrink-0">
+                      {/* ── Module index circular badge ── */}
+                      <IndexBadge index={moduleIndex + 1} />
+                      <p className="text-sm font-semibold flex-1 text-left truncate">
+                        {module.name}
+                      </p>
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] font-medium flex-shrink-0"
+                      >
                         {module.lessons.length}{" "}
                         {module.lessons.length === 1 ? "lesson" : "lessons"}
                       </Badge>
@@ -716,52 +1058,183 @@ function OutlineTab({
 
                   <AccordionContent className="px-4 pb-4">
                     <div className="space-y-2.5 mt-1">
-                      <DndContext collisionDetection={closestCenter} onDragEnd={(e) => handleLessonDragEnd(module.id, e)}>
-                        <SortableContext items={module.lessons.map((l) => l.id)} strategy={verticalListSortingStrategy}>
-                          {module.lessons.map((lesson) => {
-                            const lessonResources = resourcesForLesson(lesson.id);
+                      <DndContext
+                        collisionDetection={closestCenter}
+                        onDragEnd={(e) => handleLessonDragEnd(module.id, e)}
+                      >
+                        <SortableContext
+                          items={module.lessons.map((l) => l.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {module.lessons.map((lesson, lessonIndex) => {
+                            const lessonResources = resourcesForLesson(
+                              lesson.id,
+                            );
                             return (
-                              <SortableLessonItem key={lesson.id} lessonId={lesson.id}>
+                              <SortableLessonItem
+                                key={lesson.id}
+                                lessonId={lesson.id}
+                              >
                                 <div className="rounded-xl border bg-background overflow-hidden shadow-none">
                                   <div className="flex flex-row items-start gap-3 px-3.5 py-3">
                                     <DragHandle>
                                       <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0 mt-0.5" />
                                     </DragHandle>
+                                    {/* ── Lesson index circular badge ── */}
+                                    <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full border border-border bg-muted text-[10px] font-semibold text-muted-foreground leading-none select-none mt-0.5">
+                                      {lessonIndex + 1}
+                                    </span>
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-semibold leading-snug">{lesson.name}</p>
+                                      <p className="text-sm font-semibold leading-snug">
+                                        {lesson.name}
+                                      </p>
                                       {lesson.description && (
-                                        <p className="text-xs text-muted-foreground mt-0.5">{lesson.description}</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                          {lesson.description}
+                                        </p>
                                       )}
                                     </div>
                                     <AddResourceDialog
                                       lessonName={lesson.name}
-                                      onAdd={(n, meta, type) => handleAddResource(lesson.id, n, meta, type)}
+                                      onAdd={(n, meta, type, content) =>
+                                        handleAddResource(
+                                          lesson.id,
+                                          n,
+                                          meta,
+                                          type,
+                                          content,
+                                        )
+                                      }
                                     />
                                   </div>
 
                                   {lessonResources.length > 0 && (
                                     <div className="border-t">
                                       <Accordion type="single" collapsible>
-                                        <AccordionItem value={`res-${lesson.id}`} className="border-none">
+                                        <AccordionItem
+                                          value={`res-${lesson.id}`}
+                                          className="border-none"
+                                        >
                                           <AccordionTrigger className="px-3.5 py-2 hover:no-underline [&>svg]:hidden group">
                                             <div className="flex items-center gap-2 w-full">
                                               <Paperclip className="w-3 h-3 text-primary" />
                                               <span className="text-[11px] font-semibold text-primary tracking-wide uppercase">
-                                                Lesson Resources ({lessonResources.length})
+                                                Lesson Resources (
+                                                {lessonResources.length})
                                               </span>
                                               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-auto transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                             </div>
                                           </AccordionTrigger>
                                           <AccordionContent className="px-3.5 pb-3">
                                             <div className="rounded-lg border overflow-hidden">
-                                              {lessonResources.map((res) => (
-                                                <ResourceRow
-                                                  key={res.id}
-                                                  resource={res}
-                                                  onTypeChange={handleTypeChange}
-                                                  onDelete={handleDeleteResource}
-                                                />
-                                              ))}
+                                              {lessonResources.map((res) =>
+                                                res.type === "Code" &&
+                                                res.content ? (
+                                                  <Accordion
+                                                    key={res.id}
+                                                    type="single"
+                                                    collapsible
+                                                    onValueChange={(
+                                                      v,
+                                                    ) => {
+                                                      if (v === res.id) {
+                                                        setOpenedCodeAccordions(
+                                                          (prev) => {
+                                                            const next = new Set(
+                                                              prev,
+                                                            );
+                                                            next.add(res.id);
+                                                            return next;
+                                                          },
+                                                        );
+                                                      }
+                                                    }}
+                                                  >
+                                                    <AccordionItem
+                                                      value={res.id}
+                                                      className="border-none"
+                                                    >
+                                                      <AccordionTrigger className="px-4 py-3 hover:no-underline [&>svg]:hidden group border-b border-border last:border-b-0">
+                                                        <div className="flex items-center gap-3 w-full">
+                                                          <div className="flex-shrink-0 w-9 h-9 rounded-md bg-muted flex items-center justify-center">
+                                                            <Code2 className="w-4 h-4 text-muted-foreground" />
+                                                          </div>
+                                                          <div className="flex-1 min-w-0 text-left">
+                                                            <p className="text-sm font-semibold leading-snug truncate">
+                                                              {res.name}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground truncate">
+                                                              {res.meta}
+                                                            </p>
+                                                          </div>
+                                                          <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                                        </div>
+                                                      </AccordionTrigger>
+                                                      <AccordionContent className="p-0">
+                                                        {openedCodeAccordions.has(
+                                                          res.id,
+                                                        ) && (
+                                                          <div className="border-b border-border">
+                                                            <CodeBlock
+                                                              value={res.name}
+                                                              data={[
+                                                                {
+                                                                  language:
+                                                                    "typescript",
+                                                                  filename:
+                                                                    res.name,
+                                                                  code: res.content,
+                                                                },
+                                                              ]}
+                                                            >
+                                                              <div className="max-w-full overflow-x-auto">
+                                                                <CodeBlockHeader className="border-b bg-muted/40 px-4 py-2">
+                                                                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                                                    <Code2 className="w-3.5 h-3.5" />
+                                                                    {res.name}
+                                                                  </div>
+                                                                </CodeBlockHeader>
+                                                                <CodeBlockBody>
+                                                                  {(
+                                                                    item,
+                                                                  ) => (
+                                                                    <CodeBlockItem
+                                                                      value={
+                                                                        item.filename
+                                                                      }
+                                                                      lineNumbers
+                                                                    >
+                                                                      <CodeBlockContent
+                                                                        language={
+                                                                          "typescript" as any
+                                                                        }
+                                                                      >
+                                                                        {res.content ??
+                                                                          ""}
+                                                                      </CodeBlockContent>
+                                                                    </CodeBlockItem>
+                                                                  )}
+                                                                </CodeBlockBody>
+                                                              </div>
+                                                            </CodeBlock>
+                                                          </div>
+                                                        )}
+                                                      </AccordionContent>
+                                                    </AccordionItem>
+                                                  </Accordion>
+                                                ) : (
+                                                  <ResourceRow
+                                                    key={res.id}
+                                                    resource={res}
+                                                    onTypeChange={
+                                                      handleTypeChange
+                                                    }
+                                                    onDelete={
+                                                      handleDeleteResource
+                                                    }
+                                                  />
+                                                ),
+                                              )}
                                             </div>
                                           </AccordionContent>
                                         </AccordionItem>
@@ -776,10 +1249,14 @@ function OutlineTab({
                       </DndContext>
 
                       <AddLessonDialog
-                        onAdd={(name, description) => handleAddLesson(module.id, name, description)}
+                        onAdd={(name, description) =>
+                          handleAddLesson(module.id, name, description)
+                        }
                       />
                       {addingLessonFor === module.id && (
-                        <p className="text-[10px] text-muted-foreground text-center">Saving lesson…</p>
+                        <p className="text-[10px] text-muted-foreground text-center">
+                          Saving lesson…
+                        </p>
                       )}
                     </div>
                   </AccordionContent>
@@ -790,7 +1267,9 @@ function OutlineTab({
 
           <AddModuleDialog onAdd={handleAddModule} />
           {isAddingModule && (
-            <p className="text-[10px] text-muted-foreground text-center">Saving module…</p>
+            <p className="text-[10px] text-muted-foreground text-center">
+              Saving module…
+            </p>
           )}
         </div>
       </SortableContext>
@@ -832,43 +1311,72 @@ function ResourcesTab({
           <h3 className="text-sm font-semibold">Resource Library</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {resources.length} resources across{" "}
-            {modules.reduce((a, m) => a + m.lessons.length, 0)} lessons. Grouped by module — click any
-            to edit.
+            {modules.reduce((a, m) => a + m.lessons.length, 0)} lessons. Grouped
+            by module — click any to edit.
           </p>
         </div>
-        <ToggleGroup
-          type="single"
-          value={filter}
-          onValueChange={(v: string) => v && setFilter(v as ResourceType | "All")}
-          className="flex flex-wrap gap-1.5 justify-start"
-        >
-          <ToggleGroupItem value="All" size="sm" className="h-7 px-2.5 text-[11px] rounded-full">
-            All
-          </ToggleGroupItem>
-          {RESOURCE_TYPES.map((t) => (
-            <ToggleGroupItem key={t.value} value={t.value} size="sm" className="h-7 px-2.5 text-[11px] rounded-full">
-              {t.value}
+        {/* ── Filter toggle with border ── */}
+        <div className="rounded-lg border bg-muted/30 p-1">
+          <ToggleGroup
+            type="single"
+            value={filter}
+            onValueChange={(v: string) =>
+              v && setFilter(v as ResourceType | "All")
+            }
+            className="flex flex-wrap gap-1 justify-start"
+          >
+            <ToggleGroupItem
+              value="All"
+              size="sm"
+              className="h-7 px-2.5 text-[11px] rounded-md data-[state=on]:bg-background data-[state=on]:border data-[state=on]:border-border data-[state=on]:shadow-sm"
+            >
+              All
             </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+            {RESOURCE_TYPES.map((t) => (
+              <ToggleGroupItem
+                key={t.value}
+                value={t.value}
+                size="sm"
+                className="h-7 px-2.5 text-[11px] rounded-md data-[state=on]:bg-background data-[state=on]:border data-[state=on]:border-border data-[state=on]:shadow-sm"
+              >
+                {t.value}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
       </div>
 
       <div className="space-y-3">
         {modules.map((module) => {
           const moduleLessonIds = new Set(module.lessons.map((l) => l.id));
           const moduleResources = resources.filter(
-            (r) => moduleLessonIds.has(r.lessonId) && (filter === "All" || r.type === filter),
+            (r) =>
+              moduleLessonIds.has(r.lessonId) &&
+              (filter === "All" || r.type === filter),
           );
           return (
-            <Accordion key={module.id} type="single" collapsible defaultValue={module.id}>
-              <AccordionItem value={module.id} className="border rounded-2xl overflow-hidden">
+            <Accordion
+              key={module.id}
+              type="single"
+              collapsible
+              defaultValue={module.id}
+            >
+              <AccordionItem
+                value={module.id}
+                className="border rounded-2xl overflow-hidden"
+              >
                 <AccordionTrigger className="px-4 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&>svg]:hidden group">
                   <div className="flex items-center gap-2.5 w-full">
                     <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Paperclip className="w-3.5 h-3.5 text-primary" />
                     </div>
-                    <p className="text-sm font-semibold flex-1 text-left truncate">{module.name}</p>
-                    <Badge variant="secondary" className="text-[10px] font-medium flex-shrink-0">
+                    <p className="text-sm font-semibold flex-1 text-left truncate">
+                      {module.name}
+                    </p>
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] font-medium flex-shrink-0"
+                    >
                       {moduleResources.length} resources
                     </Badge>
                     <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -889,7 +1397,9 @@ function ResourcesTab({
                     </div>
                   ) : (
                     <div className="text-center py-6 border-t">
-                      <p className="text-xs text-muted-foreground">No resources match this filter.</p>
+                      <p className="text-xs text-muted-foreground">
+                        No resources match this filter.
+                      </p>
                     </div>
                   )}
                 </AccordionContent>
@@ -925,11 +1435,19 @@ function SettingsRow({
               destructive ? "bg-destructive/10" : "bg-muted"
             }`}
           >
-            <Icon className={`w-4 h-4 ${destructive ? "text-destructive" : "text-muted-foreground"}`} />
+            <Icon
+              className={`w-4 h-4 ${destructive ? "text-destructive" : "text-muted-foreground"}`}
+            />
           </div>
           <div className="min-w-0">
-            <p className={`text-sm font-semibold ${destructive ? "text-destructive" : ""}`}>{title}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+            <p
+              className={`text-sm font-semibold ${destructive ? "text-destructive" : ""}`}
+            >
+              {title}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {description}
+            </p>
           </div>
         </div>
         <div className="flex-shrink-0">{control}</div>
@@ -949,8 +1467,14 @@ function SettingsTab() {
       <SettingsRow
         icon={Eye}
         title="Visibility"
-        description={visibility ? "Anyone with the link can view this course" : "Only you can view this course"}
-        control={<Switch checked={visibility} onCheckedChange={setVisibility} />}
+        description={
+          visibility
+            ? "Anyone with the link can view this course"
+            : "Only you can view this course"
+        }
+        control={
+          <Switch checked={visibility} onCheckedChange={setVisibility} />
+        }
       />
       <SettingsRow
         icon={FileText}
@@ -962,9 +1486,15 @@ function SettingsTab() {
               <Button size="sm">Export</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => alert("Exporting as Markdown…")}>Export as Markdown</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alert("Exporting as PDF…")}>Export as PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alert("Pushing to Notion…")}>Push to Notion</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => alert("Exporting as Markdown…")}>
+                Export as Markdown
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => alert("Exporting as PDF…")}>
+                Export as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => alert("Pushing to Notion…")}>
+                Push to Notion
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         }
@@ -989,7 +1519,9 @@ function SettingsTab() {
         control={
           <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <DialogTrigger asChild>
-              <Button variant="destructive" size="sm">Delete</Button>
+              <Button variant="destructive" size="sm">
+                Delete
+              </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
@@ -1000,8 +1532,8 @@ function SettingsTab() {
                   <DialogTitle>Delete this course?</DialogTitle>
                 </div>
                 <DialogDescription>
-                  This permanently removes the draft, every module, lesson, and all attached resources. This action
-                  cannot be undone.
+                  This permanently removes the draft, every module, lesson, and
+                  all attached resources. This action cannot be undone.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
@@ -1012,7 +1544,9 @@ function SettingsTab() {
                   variant="destructive"
                   onClick={() => {
                     setDeleteOpen(false);
-                    alert("Course deleted (demo only — nothing was actually removed).");
+                    alert(
+                      "Course deleted (demo only — nothing was actually removed).",
+                    );
                   }}
                 >
                   Delete course
@@ -1044,7 +1578,9 @@ function ShareTab() {
         icon={Globe}
         title="Allow public sharing"
         description="Anyone with the link below can view this course outline."
-        control={<Switch checked={publicSharing} onCheckedChange={setPublicSharing} />}
+        control={
+          <Switch checked={publicSharing} onCheckedChange={setPublicSharing} />
+        }
       />
       <div
         className={`rounded-xl border bg-background overflow-hidden shadow-none transition-opacity ${
@@ -1058,15 +1594,24 @@ function ShareTab() {
           <div>
             <p className="text-sm font-semibold">Public share link</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Share a beautiful, mobile-optimized version of your course outline.
+              Share a beautiful, mobile-optimized version of your course
+              outline.
             </p>
           </div>
         </div>
         <div className="px-4 pb-4">
           <div className="flex items-center gap-2">
             <Input readOnly value={shareLink} className="text-xs font-mono" />
-            <Button size="sm" onClick={handleCopy} className="flex-shrink-0 gap-1.5">
-              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            <Button
+              size="sm"
+              onClick={handleCopy}
+              className="flex-shrink-0 gap-1.5"
+            >
+              {copied ? (
+                <Check className="w-3.5 h-3.5" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
               {copied ? "Copied" : "Copy"}
             </Button>
           </div>
@@ -1101,7 +1646,9 @@ function PreviewDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">{title || "Untitled course"}</DialogTitle>
+          <DialogTitle className="text-xl">
+            {title || "Untitled course"}
+          </DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex items-center gap-2 mb-2">
@@ -1127,12 +1674,16 @@ function PreviewDialog({
                       {mi + 1}.{li + 1} {lesson.name}
                     </span>
                     {lesson.description && (
-                      <p className="text-muted-foreground mt-0.5">{lesson.description}</p>
+                      <p className="text-muted-foreground mt-0.5">
+                        {lesson.description}
+                      </p>
                     )}
                   </div>
                 ))}
                 {module.lessons.length === 0 && (
-                  <p className="text-xs text-muted-foreground">No lessons yet</p>
+                  <p className="text-xs text-muted-foreground">
+                    No lessons yet
+                  </p>
                 )}
               </div>
             </div>
@@ -1157,8 +1708,8 @@ function UpgradeDialog({ children }: { children: React.ReactNode }) {
           </div>
           <DialogTitle>Flow Map is a Creator Plan feature</DialogTitle>
           <DialogDescription>
-            Visualize your course as an interactive flow diagram, with branching paths and module connections —
-            available on the Creator plan.
+            Visualize your course as an interactive flow diagram, with branching
+            paths and module connections — available on the Creator plan.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2 py-2">
@@ -1205,7 +1756,9 @@ function StatPill({
       <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
       <div>
         <p className="text-base font-bold leading-none">{value}</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5 leading-none">{label}</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5 leading-none">
+          {label}
+        </p>
       </div>
     </div>
   );
@@ -1218,9 +1771,13 @@ interface CourseBuilderProps {
 
 export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const { data: session } = useSession();
-  const [courseId, setCourseId] = useState<string | null>(initialData?.courseId ?? null);
+  const [courseId, setCourseId] = useState<string | null>(
+    initialData?.courseId ?? null,
+  );
   const [title, setTitle] = useState(initialData?.title ?? "");
-  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [description, setDescription] = useState(
+    initialData?.description ?? "",
+  );
   const [modules, setModules] = useState<Module[]>(initialData?.modules ?? []);
   const [resources, setResources] = useState<Resource[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -1258,7 +1815,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           toast.success("Course updated!");
         } else {
           toast.error(
-            ((result as Record<string, unknown>).error as string) || "Failed to update course.",
+            ((result as Record<string, unknown>).error as string) ||
+              "Failed to update course.",
           );
         }
       } else {
@@ -1308,7 +1866,9 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
       } else {
         const err = result as Record<string, unknown>;
         if (err.errors) {
-          toast.error(Object.values(err.errors as Record<string, string>).join(", "));
+          toast.error(
+            Object.values(err.errors as Record<string, string>).join(", "),
+          );
         } else {
           toast.error((err.error as string) || "Failed to update course.");
         }
@@ -1335,7 +1895,8 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
         setDeleteOpen(false);
       } else {
         toast.error(
-          ((result as Record<string, unknown>).error as string) || "Failed to delete course.",
+          ((result as Record<string, unknown>).error as string) ||
+            "Failed to delete course.",
         );
       }
     } catch {
@@ -1359,7 +1920,9 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
                   <span>Dashboard</span>
                   <span>/</span>
-                  <span className="text-foreground font-medium">{initialData ? "Edit Course" : "Course Builder"}</span>
+                  <span className="text-foreground font-medium">
+                    {initialData ? "Edit Course" : "Course Builder"}
+                  </span>
                 </div>
                 <h1 className="text-xl font-bold leading-tight truncate">
                   {courseId ? title || "Untitled Course" : "New Course"}
@@ -1368,10 +1931,24 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <PreviewDialog title={title} description={description} modules={modules} resources={resources} />
+              <PreviewDialog
+                title={title}
+                description={description}
+                modules={modules}
+                resources={resources}
+              />
               {!courseId ? (
-                <Button size="sm" onClick={handleSave} disabled={isSaving} className="gap-1.5">
-                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="gap-1.5"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
                   {isSaving ? "Saving…" : "Save draft"}
                 </Button>
               ) : (
@@ -1399,7 +1976,11 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             <div className="flex items-center gap-2 mt-5 flex-wrap">
               <StatPill icon={Layers} label="Modules" value={modules.length} />
               <StatPill icon={BookOpen} label="Lessons" value={totalLessons} />
-              <StatPill icon={Paperclip} label="Resources" value={resources.length} />
+              <StatPill
+                icon={Paperclip}
+                label="Resources"
+                value={resources.length}
+              />
             </div>
           )}
         </div>
@@ -1410,14 +1991,24 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             <CardContent className="p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Course</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                    Course
+                  </p>
                   <h2 className="text-lg font-bold leading-snug">{title}</h2>
                   {description && (
-                    <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{description}</p>
+                    <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                      {description}
+                    </p>
                   )}
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" title="Edit course" onClick={openEditDialog}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    title="Edit course"
+                    onClick={openEditDialog}
+                  >
                     <PenLine className="w-3.5 h-3.5 text-muted-foreground" />
                   </Button>
                   <Button
@@ -1436,7 +2027,9 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
         ) : (
           <Card className="mb-6 border shadow-none">
             <CardHeader className="pb-3 pt-5 px-5">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Course Details</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Course Details
+              </p>
             </CardHeader>
             <CardContent className="px-5 pb-5 space-y-4">
               <div className="space-y-1.5">
@@ -1475,11 +2068,17 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
                 <LayoutList className="w-3.5 h-3.5" />
                 Outline
               </TabsTrigger>
-              <TabsTrigger value="resources" className="gap-1.5 text-xs h-7 px-3">
+              <TabsTrigger
+                value="resources"
+                className="gap-1.5 text-xs h-7 px-3"
+              >
                 <Paperclip className="w-3.5 h-3.5" />
                 Resources
               </TabsTrigger>
-              <TabsTrigger value="settings" className="gap-1.5 text-xs h-7 px-3">
+              <TabsTrigger
+                value="settings"
+                className="gap-1.5 text-xs h-7 px-3"
+              >
                 <Settings2 className="w-3.5 h-3.5" />
                 Settings
               </TabsTrigger>
@@ -1533,7 +2132,11 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           </TabsContent>
 
           <TabsContent value="resources">
-            <ResourcesTab modules={modules} resources={resources} setResources={setResources} />
+            <ResourcesTab
+              modules={modules}
+              resources={resources}
+              setResources={setResources}
+            />
           </TabsContent>
 
           <TabsContent value="settings">
@@ -1551,12 +2154,19 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit course</DialogTitle>
-            <DialogDescription>Update the course title and description.</DialogDescription>
+            <DialogDescription>
+              Update the course title and description.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="edit-title">Course Title</Label>
-              <Input id="edit-title" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="text-sm" />
+              <Input
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="text-sm"
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="edit-desc">Description</Label>
@@ -1572,8 +2182,13 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
             <Button variant="outline" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditSave} disabled={!editTitle.trim() || isUpdating}>
-              {isUpdating && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+            <Button
+              onClick={handleEditSave}
+              disabled={!editTitle.trim() || isUpdating}
+            >
+              {isUpdating && (
+                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+              )}
               Save changes
             </Button>
           </DialogFooter>
@@ -1588,11 +2203,16 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-destructive" />
               </div>
-              <AlertDialogTitle className="text-lg">Delete this course?</AlertDialogTitle>
+              <AlertDialogTitle className="text-lg">
+                Delete this course?
+              </AlertDialogTitle>
             </div>
             <AlertDialogDescription className="text-sm leading-relaxed">
               This will permanently delete{" "}
-              <span className="font-semibold text-foreground">&ldquo;{title}&rdquo;</span>, along with{" "}
+              <span className="font-semibold text-foreground">
+                &ldquo;{title}&rdquo;
+              </span>
+              , along with{" "}
               <span className="font-semibold text-foreground">
                 {modules.length} {modules.length === 1 ? "module" : "modules"}
               </span>{" "}
@@ -1610,7 +2230,9 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+              {isDeleting && (
+                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+              )}
               Delete permanently
             </AlertDialogAction>
           </AlertDialogFooter>
