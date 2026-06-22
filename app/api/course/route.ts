@@ -22,7 +22,11 @@ export async function GET() {
       include: {
         Module: {
           include: {
-            Lesson: true,
+            Lesson: {
+              include: {
+                resources: true,
+              },
+            },
           },
         },
       },

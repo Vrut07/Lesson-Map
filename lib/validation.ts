@@ -25,6 +25,39 @@ export const lessonSchema = z.object({
   moduleId: z.string().uuid("Valid module ID is required"),
 });
 
+export const resourceTypeSchema = z.enum(["Code", "PDF", "Link", "Note", "Image"]);
+
+export const createResourceSchema = z
+  .object({
+    lessonId: z.string().min(1, "Lesson ID is required"),
+    name: z.string().min(1, "Resource name is required"),
+    type: resourceTypeSchema,
+    meta: z.string().optional(),
+    content: z.string().optional(),
+    url: z.string().optional(),
+    key: z.string().optional(),
+    filename: z.string().optional(),
+    contentType: z.string().optional(),
+    size: z.number().int().nonnegative().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if ((data.type === "PDF" || data.type === "Image") && !data.key) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["key"],
+        message: "Uploaded file key is required for PDF and Image resources",
+      });
+    }
+  });
+
+export const updateResourceSchema = z.object({
+  name: z.string().min(1, "Resource name is required").optional(),
+  type: resourceTypeSchema.optional(),
+  meta: z.string().optional(),
+  content: z.string().optional(),
+  url: z.string().optional(),
+});
+
 // Bulk create modules schema (for creating multiple modules at once)
 export const createModulesBulkSchema = z.object({
   courseId: z.string("Valid course ID is required"),

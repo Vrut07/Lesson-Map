@@ -30,7 +30,17 @@ export async function GET(_: Request, context: Context) {
         id: courseId,
         userId: userID,
       },
-      include: { Module: true },
+      include: {
+        Module: {
+          include: {
+            Lesson: {
+              include: {
+                resources: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!course)
@@ -75,11 +85,17 @@ export async function PUT(req: Request, context: Context) {
       );
     }
 
+    const courseExists = await db.course.findFirst({
+      where: { id: courseId, userId },
+      select: { id: true },
+    });
+
+    if (!courseExists) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
+
     const updated = await db.course.update({
-      where: {
-        id: courseId,
-        userId,
-      },
+      where: { id: courseId },
       data: {
         courseName: result.data.courseName,
         description: result.data.description,
@@ -111,12 +127,13 @@ export async function DELETE(_: Request, context: Context) {
   }
 
   try {
-    await db.course.deleteMany({
-      where: {
-        id: courseId,
-        userId,
-      },
+    const deleted = await db.course.deleteMany({
+      where: { id: courseId, userId },
     });
+
+    if (deleted.count === 0) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
 
     return NextResponse.json(
       { message: "Course deleted successfully" },

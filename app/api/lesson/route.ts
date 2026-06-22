@@ -25,6 +25,7 @@ export async function GET() {
         },
       },
       include: {
+        resources: true,
         module: {
           select: { id: true, moduleName: true, courseId: true },
         },

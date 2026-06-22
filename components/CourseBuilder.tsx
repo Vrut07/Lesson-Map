@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -52,7 +52,6 @@ import {
   Code2,
   FileText,
   Link2,
-  Video,
   StickyNote,
   Image as ImageIcon,
   Trash2,
@@ -72,12 +71,11 @@ import {
   Layers,
   Settings2,
   Share2,
-  Upload,
-  X,
   FileImage,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
+import FileUpload, { type UploadedResource } from "@/components/forms/FileUpload";
 import {
   createCourseAction,
   createModulesAction,
@@ -111,21 +109,27 @@ import {
 } from "@/components/kibo-ui/code-block";
 
 // ── Types ──────────────────────────────────────────────────────────────
-export type ResourceType = "Code" | "PDF" | "Link" | "Video" | "Note" | "Image";
+export type ResourceType = "Code" | "PDF" | "Link" | "Note" | "Image";
 
 export interface Resource {
   id: string;
   name: string;
-  meta: string;
+  meta: string | null;
   type: ResourceType;
   lessonId: string;
-  content?: string;
+  content?: string | null;
+  url?: string | null;
+  key?: string | null;
+  filename?: string | null;
+  contentType?: string | null;
+  size?: number | null;
 }
 
 export interface Lesson {
   id: string;
   name: string;
   description: string;
+  resources?: Resource[];
 }
 
 export interface Module {
@@ -149,7 +153,6 @@ const RESOURCE_TYPES: {
   { value: "Code", icon: Code2 },
   { value: "PDF", icon: FileText },
   { value: "Link", icon: Link2 },
-  { value: "Video", icon: Video },
   { value: "Note", icon: StickyNote },
   { value: "Image", icon: ImageIcon },
 ];
@@ -300,131 +303,15 @@ function AddModuleDialog({
   );
 }
 
-// ── File Upload Zone ──────────────────────────────────────────────────
-function FileUploadZone({
-  accept,
-  label,
-  icon: Icon,
-  hint,
-  onFile,
-}: {
-  accept: string;
-  label: string;
-  icon: React.ElementType;
-  hint: string;
-  onFile?: (file: File) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [dragOver, setDragOver] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  const handleFile = (file: File) => {
-    setSelectedFile(file);
-    onFile?.(file);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-  };
-
-  const clearFile = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedFile(null);
-    if (inputRef.current) inputRef.current.value = "";
-  };
-
-  return (
-    <div
-      className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-4 py-6 transition-colors cursor-pointer
-        ${
-          dragOver
-            ? "border-primary bg-primary/5"
-            : selectedFile
-              ? "border-border bg-muted/40"
-              : "border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/30"
-        }`}
-      onClick={() => !selectedFile && inputRef.current?.click()}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setDragOver(true);
-      }}
-      onDragLeave={() => setDragOver(false)}
-      onDrop={handleDrop}
-    >
-      <input
-        ref={inputRef}
-        type="file"
-        accept={accept}
-        className="hidden"
-        onChange={handleChange}
-      />
-
-      {selectedFile ? (
-        <div className="flex items-center gap-3 w-full">
-          <div className="flex-shrink-0 w-10 h-10 rounded-lg border bg-background flex items-center justify-center">
-            <Icon className="w-5 h-5 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate">
-              {selectedFile.name}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {(selectedFile.size / 1024).toFixed(1)} KB
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            onClick={clearFile}
-          >
-            <X className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      ) : (
-        <>
-          <div className="flex-shrink-0 w-10 h-10 rounded-xl border bg-background flex items-center justify-center">
-            <Upload className="w-4.5 h-4.5 text-muted-foreground" />
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-foreground">
-              Drop your {label} here
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs px-3"
-            onClick={(e) => {
-              e.stopPropagation();
-              inputRef.current?.click();
-            }}
-          >
-            Browse files
-          </Button>
-        </>
-      )}
-    </div>
-  );
-}
-
 // ── Add Resource Dialog ───────────────────────────────────────────────
 function AddResourceDialog({
+  lessonId,
   lessonName,
   onAdd,
 }: {
+  lessonId: string;
   lessonName: string;
-  onAdd: (name: string, meta: string, type: ResourceType, content?: string) => void;
+  onAdd: (resource: Resource) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -432,22 +319,70 @@ function AddResourceDialog({
   const [type, setType] = useState<ResourceType>("Link");
   const [noteContent, setNoteContent] = useState("");
   const [codeContent, setCodeContent] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = () => {
-    if (!name.trim()) return;
-    const finalMeta =
-      type === "Code"
-        ? `${
-            codeContent.split("\n").length
-          } lines · ${name}`
-        : meta.trim() || "Untitled resource";
-    onAdd(name.trim(), finalMeta, type, type === "Code" ? codeContent : undefined);
+  const reset = () => {
     setName("");
     setMeta("");
     setNoteContent("");
     setCodeContent("");
     setType("Link");
+  };
+
+  const handleUploaded = (resource: UploadedResource) => {
+    onAdd({ ...resource, type: resource.type });
+    reset();
     setOpen(false);
+  };
+
+  const handleSubmit = async () => {
+    if (!name.trim()) return;
+    if (type === "PDF" || type === "Image") {
+      toast.error("Select a file to upload first.");
+      return;
+    }
+
+    const finalMeta =
+      type === "Code"
+        ? `${codeContent.split("\n").length} lines · ${name}`
+        : type === "Note"
+          ? meta.trim() || noteContent.slice(0, 80) || "Note"
+        : meta.trim() || "Untitled resource";
+
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/resource", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lessonId,
+          name: name.trim(),
+          meta: finalMeta,
+          type,
+          content:
+            type === "Code"
+              ? codeContent
+              : type === "Note"
+                ? noteContent
+                : undefined,
+          url: type === "Link" ? meta.trim() : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save resource.");
+      }
+
+      const resource = (await response.json()) as Resource;
+      onAdd(resource);
+      reset();
+      setOpen(false);
+      toast.success("Resource added.");
+    } catch (error) {
+      toast.error((error as Error).message || "Failed to save resource.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -510,8 +445,6 @@ function AddResourceDialog({
                         ? "e.g. Key Takeaways"
                         : type === "Code"
                           ? "e.g. async-await.js"
-                          : type === "Video"
-                            ? "e.g. Intro Lecture"
                             : "e.g. MDN Docs"
                 }
                 value={name}
@@ -525,14 +458,19 @@ function AddResourceDialog({
           {type === "PDF" && (
             <div className="space-y-1.5">
               <Label>PDF File</Label>
-              <FileUploadZone
+              <FileUpload
+                lessonId={lessonId}
+                resourceName={name}
+                type="PDF"
                 accept=".pdf,application/pdf"
                 label="PDF"
                 icon={FileText}
                 hint="PDF up to 50 MB"
-                onFile={(f) =>
-                  setMeta(`${(f.size / 1024).toFixed(1)} KB · ${f.name}`)
+                onSelected={(f) =>
+                  setMeta(f ? `${(f.size / 1024).toFixed(1)} KB · ${f.name}` : "")
                 }
+                onUploaded={handleUploaded}
+                disabled={!name.trim()}
               />
             </div>
           )}
@@ -540,14 +478,19 @@ function AddResourceDialog({
           {type === "Image" && (
             <div className="space-y-1.5">
               <Label>Image File</Label>
-              <FileUploadZone
+              <FileUpload
+                lessonId={lessonId}
+                resourceName={name}
+                type="Image"
                 accept="image/*"
                 label="image"
                 icon={FileImage}
                 hint="PNG, JPG, GIF, SVG up to 10 MB"
-                onFile={(f) =>
-                  setMeta(`${(f.size / 1024).toFixed(1)} KB · ${f.name}`)
+                onSelected={(f) =>
+                  setMeta(f ? `${(f.size / 1024).toFixed(1)} KB · ${f.name}` : "")
                 }
+                onUploaded={handleUploaded}
+                disabled={!name.trim()}
               />
             </div>
           )}
@@ -592,15 +535,13 @@ function AddResourceDialog({
             </div>
           )}
 
-          {(type === "Link" || type === "Video") && (
+          {type === "Link" && (
             <div className="space-y-1.5">
               <Label htmlFor="res-meta">Details</Label>
               <Input
                 id="res-meta"
                 placeholder={
-                  type === "Link"
-                    ? "e.g. https://developer.mozilla.org"
-                    : "e.g. 12 min · YouTube"
+                  "e.g. https://developer.mozilla.org"
                 }
                 value={meta}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -615,8 +556,12 @@ function AddResourceDialog({
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!name.trim()}>
-            Add resource
+          <Button
+            onClick={handleSubmit}
+            disabled={!name.trim() || isSaving || type === "PDF" || type === "Image"}
+          >
+            {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+            {type === "PDF" || type === "Image" ? "Upload file" : "Add resource"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -999,23 +944,44 @@ function OutlineTab({
     [],
   );
 
-  const handleAddResource = (
-    lessonId: string,
-    name: string,
-    meta: string,
-    type: ResourceType,
-    content?: string,
-  ) => {
-    setResources((prev) => [
-      ...prev,
-      { id: `res-${Date.now()}`, name, meta, type, lessonId, content },
-    ]);
+  const handleAddResource = (resource: Resource) => {
+    setResources((prev) => [...prev, resource]);
   };
-  const handleTypeChange = (id: string, type: ResourceType) => {
+
+  const handleTypeChange = async (id: string, type: ResourceType) => {
+    const previous = resources.find((resource) => resource.id === id);
     setResources((prev) => prev.map((r) => (r.id === id ? { ...r, type } : r)));
+    try {
+      const response = await fetch(`/api/resource/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update resource.");
+    } catch {
+      if (previous) {
+        setResources((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, type: previous.type } : r)),
+        );
+      }
+      toast.error("Failed to update resource.");
+    }
   };
-  const handleDeleteResource = (id: string) => {
+
+  const handleDeleteResource = async (id: string) => {
+    const previous = resources.find((resource) => resource.id === id);
     setResources((prev) => prev.filter((r) => r.id !== id));
+    try {
+      const response = await fetch(`/api/resource/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete resource.");
+    } catch {
+      if (previous) setResources((prev) => [...prev, previous]);
+      toast.error("Failed to delete resource.");
+    }
   };
 
   const moduleIds = modules.map((m) => m.id);
@@ -1095,16 +1061,9 @@ function OutlineTab({
                                       )}
                                     </div>
                                     <AddResourceDialog
+                                      lessonId={lesson.id}
                                       lessonName={lesson.name}
-                                      onAdd={(n, meta, type, content) =>
-                                        handleAddResource(
-                                          lesson.id,
-                                          n,
-                                          meta,
-                                          type,
-                                          content,
-                                        )
-                                      }
+                                      onAdd={handleAddResource}
                                     />
                                   </div>
 
@@ -1289,11 +1248,40 @@ function ResourcesTab({
 }) {
   const [filter, setFilter] = useState<ResourceType | "All">("All");
 
-  const handleTypeChange = (id: string, type: ResourceType) => {
+  const handleTypeChange = async (id: string, type: ResourceType) => {
+    const previous = resources.find((resource) => resource.id === id);
     setResources((prev) => prev.map((r) => (r.id === id ? { ...r, type } : r)));
+    try {
+      const response = await fetch(`/api/resource/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update resource.");
+    } catch {
+      if (previous) {
+        setResources((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, type: previous.type } : r)),
+        );
+      }
+      toast.error("Failed to update resource.");
+    }
   };
-  const handleDeleteResource = (id: string) => {
+
+  const handleDeleteResource = async (id: string) => {
+    const previous = resources.find((resource) => resource.id === id);
     setResources((prev) => prev.filter((r) => r.id !== id));
+    try {
+      const response = await fetch(`/api/resource/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete resource.");
+    } catch {
+      if (previous) setResources((prev) => [...prev, previous]);
+      toast.error("Failed to delete resource.");
+    }
   };
 
   const lessonNameById = (lessonId: string) => {
@@ -1771,6 +1759,10 @@ interface CourseBuilderProps {
 
 export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const { data: session } = useSession();
+  const initialResources =
+    initialData?.modules.flatMap((module) =>
+      module.lessons.flatMap((lesson) => lesson.resources ?? []),
+    ) ?? [];
   const [courseId, setCourseId] = useState<string | null>(
     initialData?.courseId ?? null,
   );
@@ -1779,7 +1771,7 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
     initialData?.description ?? "",
   );
   const [modules, setModules] = useState<Module[]>(initialData?.modules ?? []);
-  const [resources, setResources] = useState<Resource[]>([]);
+  const [resources, setResources] = useState<Resource[]>(initialResources);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [outlineView, setOutlineView] = useState("accordion");

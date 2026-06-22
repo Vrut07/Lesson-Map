@@ -67,7 +67,7 @@ model Module {
   order       Int
   courseId    String
   Lesson      Lesson[]
-  course      Course   @relation(fields: [courseId], references: [id])
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 }
@@ -77,9 +77,29 @@ model Lesson {
   lessonName String
   order      Int
   moduleId   String
-  module     Module   @relation(fields: [moduleId], references: [id])
+  module     Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  resources  Resource[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
+}
+
+model Resource {
+  id          String       @id @default(cuid())
+  name        String
+  type        ResourceType
+  meta        String?
+  content     String?
+  url         String?
+  key         String?
+  filename    String?
+  contentType String?
+  size        Int?
+  lessonId    String
+  lesson      Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+
+  @@index([lessonId])
 }
 
 model Session {
@@ -130,4 +150,12 @@ enum Plan {
   FREE
   CREATOR
   PROFESSIONAL
+}
+
+enum ResourceType {
+  Code
+  PDF
+  Link
+  Note
+  Image
 }

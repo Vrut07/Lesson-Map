@@ -24,7 +24,13 @@ const EditCoursePage = async ({
     where: { id, userId: session.session.userId },
     include: {
       Module: {
-        include: { Lesson: true },
+        include: {
+          Lesson: {
+            include: {
+              resources: true,
+            },
+          },
+        },
         orderBy: { order: "asc" },
       },
     },
@@ -53,6 +59,7 @@ const EditCoursePage = async ({
           id: lesson.id,
           name: lesson.lessonName,
           description: "",
+          resources: lesson.resources,
         }),
       ),
     })),
