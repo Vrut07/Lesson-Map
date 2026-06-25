@@ -24,6 +24,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "@/lib/auth-client";
 import ThemeToggle from "../ThemeToggle";
+import Image from "next/image";
 
 const NavbarItem = ({ item, href }: { item: string; href: string }) => {
   const pathName = usePathname();
@@ -221,10 +222,17 @@ export default function Navbar({ className }: { className?: string }) {
         className,
       )}
     >
-      <nav className="container mx-auto flex h-14 py-2 max-w-screen-2xl items-center px-4">
-        <div className="mr-4 flex">
-          <Link href="/" className="flex items-center">
-            <span className="font-bold text-xl">LessonMap</span>
+      <nav className="container mx-auto flex h-14 items-center px-4">
+        <div className="flex">
+          <Link href="/" className="relative flex items-center group shrink-0">
+            <img
+              src="/logo.png"
+              alt="LessonMap Logo"
+              className="absolute w-full h-full transition-transform duration-200 group-hover:scale-[1.03]"
+            />
+            <span className="text-xl font-semibold tracking-tight">
+              Lesson<span className="text-orange-500">Map</span>
+            </span>
           </Link>
         </div>
 

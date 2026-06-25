@@ -1,13 +1,69 @@
 import type { Metadata } from "next";
 // @ts-ignore
 import "@/app/globals.css";
-import Navbar from "@/components/Nav/Navbar";
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "LessonMap - Map Out Your Courses in Minutes",
+  metadataBase: new URL("https://lessonmap.vercel.app"),
+
+  title: {
+    default: "LessonMap — Visual Course & Lesson Planner",
+    template: "%s | LessonMap",
+  },
+
   description:
-    "Easily outline modules, lessons, and steps with a clean, visual dashboard designed to give structure to your entire course journey.",
+    "Plan courses visually with LessonMap. Organize modules, lessons, and learning paths using a clean mind-map inspired workspace designed for educators, creators, and teams.",
+
+  keywords: [
+    "LessonMap",
+    "course planner",
+    "lesson planner",
+    "course outline builder",
+    "curriculum planner",
+    "learning roadmap",
+    "visual lesson planner",
+    "mind map for courses",
+    "course organization tool",
+    "lesson management",
+    "educational planning software",
+  ],
+
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+
+  openGraph: {
+    title: "LessonMap — Visual Course & Lesson Planner",
+    description:
+      "Build and organize courses with a beautiful visual lesson mapping workspace.",
+    url: "https://lessonmap.vercel.app",
+    siteName: "LessonMap",
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "LessonMap",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "LessonMap — Visual Course & Lesson Planner",
+    description:
+      "Organize lessons, modules, and learning paths visually with LessonMap.",
+    images: ["/logo.png"],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function MainRootLayout({
@@ -17,9 +73,9 @@ export default function MainRootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={``}>
+      <body>
         <Providers>
-          <main className="">{children}</main>
+          <main>{children}</main>
         </Providers>
       </body>
     </html>

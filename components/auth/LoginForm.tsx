@@ -24,6 +24,8 @@ export function LoginForm({
         errorCallbackURL: "/auth-error",
         newUserCallbackURL: callbackURL,
       });
+    } catch (error) {
+      console.error("Error signing in:", error);
     } finally {
       setIsLoading(false);
     }
