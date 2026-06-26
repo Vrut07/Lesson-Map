@@ -51,6 +51,8 @@ const EditCoursePage = async ({
     courseId: selectedCourse.id,
     title: selectedCourse.courseName,
     description: selectedCourse.description,
+    isPublic: selectedCourse.isPublic,
+    shareSlug: selectedCourse.shareSlug,
     modules: selectedCourse.Module.map((mod) => ({
       id: mod.id,
       name: mod.moduleName,

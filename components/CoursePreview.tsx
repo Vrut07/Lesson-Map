@@ -52,13 +52,14 @@ import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ResourceType = "pdf" | "link" | "article";
+export type ResourceType = "Code" | "PDF" | "Link" | "Note" | "Image";
 
 export interface Resource {
   id: string;
   title: string;
   type: ResourceType;
-  url: string;
+  url?: string;
+  content?: string | null;
 }
 
 export interface Lesson {
@@ -107,19 +108,19 @@ export const MOCK_LESSON_RESOURCES: Resource[] = [
   {
     id: "r1",
     title: "Server Components — Official Docs",
-    type: "article",
+    type: "Link",
     url: "https://nextjs.org/docs/app/building-your-application/rendering/server-components",
   },
   {
     id: "r2",
     title: "RSC Architecture PDF Cheatsheet",
-    type: "pdf",
+    type: "PDF",
     url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
   },
   {
     id: "r3",
     title: "Next.js GitHub Repository",
-    type: "link",
+    type: "Link",
     url: "https://github.com/vercel/next.js",
   },
 ];
@@ -269,9 +270,11 @@ const RESOURCE_META: Record<
   ResourceType,
   { icon: LucideIcon; label: string; color: string }
 > = {
-  pdf: { icon: FileText, label: "PDF", color: "text-red-400" },
-  link: { icon: Link2, label: "Link", color: "text-blue-400" },
-  article: { icon: Newspaper, label: "Article", color: "text-emerald-400" },
+  Code: { icon: FileText, label: "Code", color: "text-purple-400" },
+  PDF: { icon: FileText, label: "PDF", color: "text-red-400" },
+  Link: { icon: Link2, label: "Link", color: "text-blue-400" },
+  Note: { icon: Newspaper, label: "Note", color: "text-emerald-400" },
+  Image: { icon: FileText, label: "Image", color: "text-amber-400" },
 };
 
 function getSeedIds(modules: Module[]): string[] {
@@ -474,12 +477,14 @@ function StatCard({
 function ResourceRow({ resource }: { resource: Resource }) {
   const meta = RESOURCE_META[resource.type];
   const Icon = meta.icon;
+  const href = resource.url || "#";
+  const isExternal = resource.url && resource.url.startsWith("http");
 
   return (
     <a
-      href={resource.url}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={href}
+      target={isExternal ? "_blank" : undefined}
+      rel={isExternal ? "noopener noreferrer" : undefined}
       className="group flex select-text items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 transition-colors hover:border-amber-500/25 hover:bg-amber-500/[0.04]"
     >
       <div
@@ -498,7 +503,9 @@ function ResourceRow({ resource }: { resource: Resource }) {
           {meta.label}
         </p>
       </div>
-      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors group-hover:text-amber-400" />
+      {resource.url && (
+        <ExternalLink className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors group-hover:text-amber-400" />
+      )}
     </a>
   );
 }
@@ -707,14 +714,11 @@ function ModuleSidebar({
 
                       </div>
 
-                      {hasResources && lesson.resources && (
+                      {selected && hasResources && lesson.resources && (
                         <ResourcesPanel
                           resources={lesson.resources}
                           isOpen={resourcesOpen}
-                          onToggle={() => {
-                            onToggleResources(lesson.id);
-                            onSelectLesson(mod.id, lesson.id);
-                          }}
+                          onToggle={() => onToggleResources(lesson.id)}
                         />
                       )}
                     </div>
@@ -1016,8 +1020,16 @@ export default function LessonMapPublicPage({
     (moduleId: string, lessonId: string) => {
       setOpenModuleId(moduleId);
       setSelectedLessonId(lessonId);
+      // Auto-open resources panel if the lesson has resources
+      const module = course.modules.find((m) => m.id === moduleId);
+      const lesson = module?.lessons.find((l) => l.id === lessonId);
+      if (lesson && (lesson.resources?.length ?? 0) > 0) {
+        setOpenResourcesId(lessonId);
+      } else {
+        setOpenResourcesId(null);
+      }
     },
-    [],
+    [course.modules],
   );
 
   const handleToggleResources = useCallback((lessonId: string) => {

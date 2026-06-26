@@ -24,6 +24,9 @@ export default async function CoursePreviewPage({
         include: {
           Lesson: {
             orderBy: { order: "asc" },
+            include: {
+              resources: true,
+            },
           },
         },
       },
@@ -62,6 +65,13 @@ export default async function CoursePreviewPage({
         id: lesson.id,
         title: lesson.lessonName,
         done: false,
+        resources: lesson.resources.map((r) => ({
+          id: r.id,
+          title: r.name,
+          type: r.type,
+          url: r.url ?? undefined,
+          content: r.content,
+        })),
       })),
     })),
   };

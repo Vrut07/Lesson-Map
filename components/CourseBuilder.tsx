@@ -143,6 +143,8 @@ export interface CourseInitialData {
   title: string;
   description: string;
   modules: Module[];
+  isPublic?: boolean;
+  shareSlug?: string | null;
 }
 
 // ── Resource type config ──────────────────────────────────────────────
@@ -1444,8 +1446,17 @@ function SettingsRow({
   );
 }
 
-function SettingsTab() {
-  const [visibility, setVisibility] = useState(false);
+function SettingsTab({
+  isPublic,
+  shareSlug,
+  onTogglePublic,
+  isToggling,
+}: {
+  isPublic: boolean;
+  shareSlug?: string | null;
+  onTogglePublic: (checked: boolean) => void;
+  isToggling: boolean;
+}) {
   const [aiRegen, setAiRegen] = useState(true);
   const [comments, setComments] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -1456,12 +1467,16 @@ function SettingsTab() {
         icon={Eye}
         title="Visibility"
         description={
-          visibility
+          isPublic
             ? "Anyone with the link can view this course"
             : "Only you can view this course"
         }
         control={
-          <Switch checked={visibility} onCheckedChange={setVisibility} />
+          <Switch
+            checked={isPublic}
+            onCheckedChange={onTogglePublic}
+            disabled={isToggling}
+          />
         }
       />
       <SettingsRow
@@ -1549,12 +1564,24 @@ function SettingsTab() {
 }
 
 // ── Share Tab ─────────────────────────────────────────────────────────
-function ShareTab() {
-  const [publicSharing, setPublicSharing] = useState(true);
+function ShareTab({
+  isPublic,
+  shareSlug,
+  onTogglePublic,
+  isToggling,
+}: {
+  isPublic: boolean;
+  shareSlug?: string | null;
+  onTogglePublic: (checked: boolean) => void;
+  isToggling: boolean;
+}) {
   const [copied, setCopied] = useState(false);
-  const shareLink = "https://lessonmap.app/p/course-xyz123";
+  const shareLink = shareSlug
+    ? `${window.location.origin}/p/${shareSlug}`
+    : "";
 
   const handleCopy = () => {
+    if (!shareLink) return;
     navigator.clipboard?.writeText(shareLink).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
@@ -1567,12 +1594,16 @@ function ShareTab() {
         title="Allow public sharing"
         description="Anyone with the link below can view this course outline."
         control={
-          <Switch checked={publicSharing} onCheckedChange={setPublicSharing} />
+          <Switch
+            checked={isPublic}
+            onCheckedChange={onTogglePublic}
+            disabled={isToggling}
+          />
         }
       />
       <div
         className={`rounded-xl border bg-background overflow-hidden shadow-none transition-opacity ${
-          publicSharing ? "" : "opacity-50 pointer-events-none"
+          isPublic ? "" : "opacity-50 pointer-events-none"
         }`}
       >
         <div className="flex flex-row items-start gap-3 p-4 pb-3">
@@ -1589,10 +1620,15 @@ function ShareTab() {
         </div>
         <div className="px-4 pb-4">
           <div className="flex items-center gap-2">
-            <Input readOnly value={shareLink} className="text-xs font-mono" />
+            <Input
+              readOnly
+              value={shareLink || "Enable public sharing to generate a link"}
+              className="text-xs font-mono"
+            />
             <Button
               size="sm"
               onClick={handleCopy}
+              disabled={!shareLink}
               className="flex-shrink-0 gap-1.5"
             >
               {copied ? (
@@ -1783,6 +1819,12 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [isPublic, setIsPublic] = useState(initialData?.isPublic ?? false);
+  const [shareSlug, setShareSlug] = useState<string | null | undefined>(
+    initialData?.shareSlug ?? null,
+  );
+  const [isTogglingPublic, setIsTogglingPublic] = useState(false);
+
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
 
   const handleSave = async () => {
@@ -1895,6 +1937,38 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
       toast.error("Something went wrong.");
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleTogglePublic = async (checked: boolean) => {
+    if (!courseId) return;
+    setIsTogglingPublic(true);
+    try {
+      const response = await fetch(`/api/course/${courseId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courseName: title.trim(),
+          description: description.trim(),
+          isPublic: checked,
+        }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Failed to update visibility");
+      }
+      const updated = await response.json();
+      setIsPublic(updated.isPublic);
+      setShareSlug(updated.shareSlug);
+      toast.success(
+        checked
+          ? "Course is now publicly visible."
+          : "Course is now private.",
+      );
+    } catch (error) {
+      toast.error((error as Error).message || "Failed to update visibility.");
+    } finally {
+      setIsTogglingPublic(false);
     }
   };
 
@@ -2132,11 +2206,21 @@ export function CourseBuilder({ initialData }: CourseBuilderProps) {
           </TabsContent>
 
           <TabsContent value="settings">
-            <SettingsTab />
+            <SettingsTab
+              isPublic={isPublic}
+              shareSlug={shareSlug}
+              onTogglePublic={handleTogglePublic}
+              isToggling={isTogglingPublic}
+            />
           </TabsContent>
 
           <TabsContent value="share">
-            <ShareTab />
+            <ShareTab
+              isPublic={isPublic}
+              shareSlug={shareSlug}
+              onTogglePublic={handleTogglePublic}
+              isToggling={isTogglingPublic}
+            />
           </TabsContent>
         </Tabs>
       </div>
