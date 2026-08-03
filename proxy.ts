@@ -16,6 +16,7 @@ const PROTECTED_API_ROUTES = [
   "/api/module",
   "/api/lesson",
   "/api/checkout",
+  "/api/subscription",
 ];
 
 // API routes that are always public (no auth check)

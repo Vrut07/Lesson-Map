@@ -10,6 +10,9 @@ export default async function Page({ params }: { params: { id: string } }) {
         include: {
           Lesson: {
             orderBy: { order: "asc" },
+            include: {
+              resources: true,
+            },
           },
         },
       },

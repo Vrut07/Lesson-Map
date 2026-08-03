@@ -20,7 +20,7 @@ export async function GET(_: Request, context: Context) {
   try {
     const lesson = await db.lesson.findFirst({
       where: { id: lessonId, module: { course: { userId } } },
-      include: { module: true },
+      include: { module: true, resources: true },
     });
 
     if (!lesson)

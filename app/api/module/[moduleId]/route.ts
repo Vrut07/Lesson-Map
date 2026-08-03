@@ -25,7 +25,13 @@ export async function GET(_: Request, context: Context) {
   try {
     const module = await db.module.findFirst({
       where: { id: moduleId, course: { userId } },
-      include: { Lesson: true },
+      include: {
+        Lesson: {
+          include: {
+            resources: true,
+          },
+        },
+      },
     });
 
     if (!module)
