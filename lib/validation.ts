@@ -66,3 +66,34 @@ export const updateProfileSchema = z.object({
     .min(1, "Name is required")
     .max(60, "Name must be 60 characters or less"),
 });
+
+// Resource types — must match the Prisma ResourceType enum
+const resourceTypes = ["Code", "PDF", "Link", "Note", "Image"] as const;
+
+// Schema for creating a resource attached to a lesson
+export const createResourceSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  type: z.enum(resourceTypes, {
+    error: "Type must be one of: Code, PDF, Link, Note, Image",
+  }),
+  meta: z.string().nullable().optional(),
+  content: z.string().nullable().optional(),
+  url: z.string().nullable().optional(),
+  key: z.string().nullable().optional(),
+  filename: z.string().nullable().optional(),
+  contentType: z.string().nullable().optional(),
+  size: z.number().int().nullable().optional(),
+  lessonId: z.string().min(1, "Lesson ID is required"),
+});
+
+// Schema for updating a resource
+export const updateResourceSchema = z.object({
+  name: z.string().min(1, "Name is required").optional(),
+  meta: z.string().nullable().optional(),
+  content: z.string().nullable().optional(),
+  url: z.string().nullable().optional(),
+  key: z.string().nullable().optional(),
+  filename: z.string().nullable().optional(),
+  contentType: z.string().nullable().optional(),
+  size: z.number().int().nullable().optional(),
+});

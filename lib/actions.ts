@@ -4,6 +4,7 @@ import {
   createCourseSchema,
   createLessonsBulkSchema,
   createModulesBulkSchema,
+  updateCourseSchema,
   updateProfileSchema,
 } from "@/lib/validation";
 import { auth } from "@/lib/auth";
@@ -320,6 +321,125 @@ async function toggleCoursePublicAction(courseId: string) {
   }
 }
 
+// updateCourseAction
+async function updateCourseAction(courseId: string, data: unknown) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session?.userId;
+
+    if (!userId) {
+      throw new Error("Unauthorized: Please log in to continue.");
+    }
+
+    const result = updateCourseSchema.safeParse(data);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const field = issue.path.join(".");
+        errors[field] = issue.message;
+      });
+      return { success: false, errors };
+    }
+
+    const course = await db.course.findFirst({
+      where: { id: courseId, userId },
+    });
+
+    if (!course) {
+      throw new Error("Course not found or not owned by user.");
+    }
+
+    const updated = await db.course.update({
+      where: { id: courseId },
+      data: {
+        courseName: result.data.courseName,
+        description: result.data.description,
+      },
+    });
+
+    revalidatePath(`/dashboard/${courseId}/edit`);
+    revalidatePath("/dashboard");
+    revalidatePath("/settings");
+
+    return { success: true, data: updated };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message || "Failed to update course.",
+    };
+  }
+}
+
+// deleteCourseAction
+async function deleteCourseAction(courseId: string) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session?.userId;
+
+    if (!userId) {
+      throw new Error("Unauthorized: Please log in to continue.");
+    }
+
+    const deleted = await db.course.deleteMany({
+      where: { id: courseId, userId },
+    });
+
+    if (deleted.count === 0) {
+      throw new Error("Course not found or not owned by user.");
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/settings");
+
+    return { success: true, message: "Course deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message || "Failed to delete course.",
+    };
+  }
+}
+
+// reorderLessonsAction
+async function reorderLessonsAction(moduleId: string, lessonIds: string[]) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session?.userId;
+
+    if (!userId) {
+      throw new Error("Unauthorized: Please log in to continue.");
+    }
+
+    const module = await db.module.findFirst({
+      where: { id: moduleId, course: { userId } },
+    });
+
+    if (!module) {
+      throw new Error("Module not found or not owned by user.");
+    }
+
+    // Update lesson orders in a transaction
+    await db.$transaction(
+      lessonIds.map((id, index) =>
+        db.lesson.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    );
+
+    revalidatePath(`/dashboard/${module.courseId}/edit`);
+    revalidatePath("/dashboard");
+
+    return { success: true, message: "Lessons reordered successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message || "Failed to reorder lessons.",
+    };
+  }
+}
+
 export {
   createCourseAction,
   createModulesAction,
@@ -327,4 +447,7 @@ export {
   reorderModulesAction,
   updateProfileAction,
   toggleCoursePublicAction,
+  updateCourseAction,
+  deleteCourseAction,
+  reorderLessonsAction,
 };
