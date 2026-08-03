@@ -51,9 +51,7 @@ model Course {
   id          String   @id @default(cuid())
   courseName  String
   description String
-  isPublished Boolean  @default(false)
   isPublic    Boolean  @default(false)
-  shareSlug   String?  @unique
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   Module      Module[]
