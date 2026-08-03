@@ -108,7 +108,7 @@ const UserProfileDropdown = ({
         <DropdownMenuItem asChild>
           <Link href="/settings" className="cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            <span>Profile</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -170,7 +170,7 @@ const MobileUserSection = ({
         <Link href="/settings">
           <Button variant="ghost" className="w-full justify-start">
             <Settings className="mr-2 h-4 w-4" />
-            Settings
+            Profile
           </Button>
         </Link>
       </SheetClose>

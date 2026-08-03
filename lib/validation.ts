@@ -58,3 +58,11 @@ export const updateModuleSchema = z.object({
   description: z.string().min(1, "Description is required"),
   order: z.number().int().min(1, "Order must be at least 1"),
 });
+
+// Schema for updating the user's profile
+export const updateProfileSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(60, "Name must be 60 characters or less"),
+});

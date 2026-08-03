@@ -50,6 +50,7 @@ model Course {
   id          String   @id @default(cuid())
   courseName  String
   description String
+  isPublic    Boolean  @default(false)
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   Module      Module[]

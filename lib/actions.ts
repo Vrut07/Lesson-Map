@@ -4,6 +4,7 @@ import {
   createCourseSchema,
   createLessonsBulkSchema,
   createModulesBulkSchema,
+  updateProfileSchema,
 } from "@/lib/validation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/prisma";
@@ -239,9 +240,91 @@ async function reorderModulesAction(courseId: string, moduleIds: string[]) {
   }
 }
 
+// updateProfileAction
+async function updateProfileAction(data: unknown) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session?.userId;
+
+    if (!userId) {
+      throw new Error("Unauthorized: Please log in to continue.");
+    }
+
+    const result = updateProfileSchema.safeParse(data);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const field = issue.path.join(".");
+        errors[field] = issue.message;
+      });
+      return { success: false, errors };
+    }
+
+    // Update the user via better-auth so the session cookie stays in sync
+    await auth.api.updateUser({
+      headers: await headers(),
+      body: {
+        name: result.data.name,
+      },
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/dashboard");
+
+    return { success: true, message: "Profile updated successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message || "Failed to update profile.",
+    };
+  }
+}
+
+// toggleCoursePublicAction
+async function toggleCoursePublicAction(courseId: string) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.session?.userId;
+
+    if (!userId) {
+      throw new Error("Unauthorized: Please log in to continue.");
+    }
+
+    const course = await db.course.findFirst({
+      where: { id: courseId, userId },
+    });
+
+    if (!course) {
+      throw new Error("Course not found or not owned by user.");
+    }
+
+    const updated = await db.course.update({
+      where: { id: courseId },
+      data: { isPublic: !course.isPublic },
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: updated.isPublic
+        ? "Course is now public!"
+        : "Course is now private.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message || "Failed to update course visibility.",
+    };
+  }
+}
+
 export {
   createCourseAction,
   createModulesAction,
   createLessonsAction,
   reorderModulesAction,
+  updateProfileAction,
+  toggleCoursePublicAction,
 };
