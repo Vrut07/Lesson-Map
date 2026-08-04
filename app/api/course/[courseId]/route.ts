@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { updateCourseSchema } from "@/lib/validation";
+import { generateUniqueShareSlug } from "@/lib/slug";
 
 interface Context {
   params: Promise<{ courseId: string }>;
@@ -30,7 +31,17 @@ export async function GET(_: Request, context: Context) {
         id: courseId,
         userId: userID,
       },
-      include: { Module: true },
+      include: {
+        Module: {
+          include: {
+            Lesson: {
+              include: {
+                resources: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!course)
@@ -75,15 +86,47 @@ export async function PUT(req: Request, context: Context) {
       );
     }
 
+    const courseExists = await db.course.findFirst({
+      where: { id: courseId, userId },
+      select: { id: true },
+    });
+
+    if (!courseExists) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
+
+    const updateData: {
+      courseName: string;
+      description: string;
+      isPublic?: boolean;
+      shareSlug?: string | null;
+    } = {
+      courseName: result.data.courseName,
+      description: result.data.description,
+    };
+
+    if (result.data.isPublic !== undefined) {
+      updateData.isPublic = result.data.isPublic;
+      if (result.data.isPublic) {
+        // Generate a share slug if making public and no slug exists yet
+        const existing = await db.course.findFirst({
+          where: { id: courseId, userId },
+          select: { shareSlug: true },
+        });
+        if (!existing?.shareSlug) {
+          updateData.shareSlug = await generateUniqueShareSlug(
+            result.data.courseName,
+            courseId,
+          );
+        }
+      } else {
+        updateData.shareSlug = null;
+      }
+    }
+
     const updated = await db.course.update({
-      where: {
-        id: courseId,
-        userId,
-      },
-      data: {
-        courseName: result.data.courseName,
-        description: result.data.description,
-      },
+      where: { id: courseId },
+      data: updateData,
     });
 
     return NextResponse.json(updated, { status: 200 });
@@ -111,12 +154,13 @@ export async function DELETE(_: Request, context: Context) {
   }
 
   try {
-    await db.course.deleteMany({
-      where: {
-        id: courseId,
-        userId,
-      },
+    const deleted = await db.course.deleteMany({
+      where: { id: courseId, userId },
     });
+
+    if (deleted.count === 0) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
 
     return NextResponse.json(
       { message: "Course deleted successfully" },

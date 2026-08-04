@@ -22,16 +22,16 @@ export async function GET() {
       include: {
         Module: {
           include: {
-            Lesson: true,
+            Lesson: {
+              include: {
+                resources: true,
+              },
+            },
           },
         },
       },
     });
-    if (!courses || courses.length === 0) {
-      return NextResponse.json({ error: "No courses found" }, { status: 404 });
-    }
-
-    return NextResponse.json(courses);
+    return NextResponse.json(courses ?? []);
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch courses", details: error },

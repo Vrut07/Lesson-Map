@@ -2,21 +2,14 @@
 import { Button } from "@/components/ui/button";
 import React from "react";
 import { AuroraText } from "@/components/ui/aurora-text";
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
 import { LiaAngleRightSolid } from "react-icons/lia";
 import { LightRays } from "./ui/light-rays";
 
 const Hero = () => {
   const { data: session } = useSession();
-
-  const handleRedirect = () => {
-    if (session?.user) {
-      redirect("/dashboard");
-    } else {
-      redirect("/sign-in");
-    }
-  };
+  const ctaHref = session?.user ? "/dashboard" : "/sign-in";
 
   return (
     <>
@@ -33,11 +26,11 @@ const Hero = () => {
           </p>
         </div>
         <div className="my-4 flex md:flex-row flex-col w-full px-5 justify-center items-center gap-3">
-          <Button variant={"default"} onClick={handleRedirect}>
-            <>
-              Get Started
+          <Button variant={"default"} asChild>
+            <Link href={ctaHref}>
+              {session?.user ? "Go to Dashboard" : "Get Started"}
               <LiaAngleRightSolid />
-            </>
+            </Link>
           </Button>
         </div>
         <LightRays />

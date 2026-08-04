@@ -27,7 +27,11 @@ export async function GET() {
         course: {
           select: { id: true, courseName: true },
         },
-        Lesson: true,
+        Lesson: {
+          include: {
+            resources: true,
+          },
+        },
       },
     });
 
