@@ -7,5 +7,5 @@ const key = process.env.DODO_PAYMENTS_KEY || "";
 
 export const dodoPayments = new DodoPayments({
   bearerToken: key,
-  environment: (process.env.DODO_PAYMENTS_ENVIRONMENT as "test_mode" | "live_mode") || "test_mode",
+  environment: "test_mode",
 });
